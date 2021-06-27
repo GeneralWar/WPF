@@ -31,7 +31,7 @@ namespace General.WPF
         /// </summary>
         public UIElementCollection Items { get { return GetValue(ItemsProperty) as UIElementCollection; } set { SetValue(ItemsProperty, value); } }
 
-        public HashSet<TabControl> mTabControls = new HashSet<TabControl>();
+        private HashSet<TabControl> mTabControls = new HashSet<TabControl>();
 
         public TabPanel()
         {
@@ -47,6 +47,7 @@ namespace General.WPF
             control.DragLeave += this.onDragLeave;
             control.DragOver += this.onDragOver;
             control.Drop += this.onDrop;
+            control.onItemsChanged += onTabControlItemsChanged;
         }
 
         private void checkDragPosition(TabControl control, DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction)
@@ -143,14 +144,10 @@ namespace General.WPF
             double x, y, offsetX, offsetY;
             this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction);
 
-            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
-            TabControl parent = item.Parent as TabControl;
-            Window window = item.GetTopWindow();
-
             if (offsetX > .25 && offsetY > .25)
             {
                 this.createNewWindow(e);
-                goto RESULT;
+                return;
             }
 
             switch (direction)
@@ -159,12 +156,6 @@ namespace General.WPF
                 case Dock.Right:
                     this.seperateInColumn(sender as TabControl, e, direction);
                     break;
-            }
-
-        RESULT:
-            if (0 == parent?.Items.Count)
-            {
-                window?.Close();
             }
         }
 
@@ -262,59 +253,15 @@ namespace General.WPF
             TabControl oldTabControl = dropItem.Parent as TabControl;
             Trace.Assert(null != oldTabControl);
             Trace.Assert(null != dropTarget);
-
-            Grid grid = oldTabControl.Parent as Grid;
-            Trace.Assert(null != grid);
-
             oldTabControl.Items.Remove(dropItem);
 
             TabControl newTabControl = new TabControl();
             newTabControl.Items.Add(dropItem);
             this.addTabControl(newTabControl);
 
+            Grid grid = dropTarget.Parent as Grid;
+            Trace.Assert(null != grid);
             this.insertColumn(grid, newTabControl, dropTarget, direction);
-
-            //int lastIndex = grid.ColumnDefinitions.Count - 1;
-            //if (index < lastIndex)
-            //{
-            //    int insertIndex = index + 1;
-            //    this.addColumnSplitter(grid, insertIndex++);
-            //    int otherIndex = this.addColumnItem(grid, dropTarget.ActualWidth, insertIndex);
-            //    grid.ColumnDefinitions[index].Width = grid.ColumnDefinitions[otherIndex].Width;
-            //    grid.Children.Insert(insertIndex, newTabControl);
-            //    Grid.SetColumn(newTabControl, insertIndex);
-
-            //    UIElement[] elements = new UIElement[grid.Children.Count];
-            //    grid.Children.CopyTo(elements, 0);
-            //    foreach (UIElement element in elements.Skip(insertIndex + 1))
-            //    {
-            //        int targetIndex = Grid.GetColumn(element) + 2;
-            //        Grid.SetColumn(element, targetIndex);
-            //        if (element is TabItem)
-            //        {
-            //            grid.ColumnDefinitions[targetIndex].Width = new GridLength((element as TabItem).ActualWidth, GridUnitType.Star);
-            //        }
-            //    }
-            //}
-            //else
-            //{
-            //    this.addColumnSplitter(grid);
-            //    int otherIndex = this.addColumnItem(grid, dropTarget.ActualWidth);
-            //    if (Dock.Right == direction)
-            //    {
-            //        grid.Children.Add(newTabControl);
-            //        Grid.SetColumn(newTabControl, otherIndex);
-            //    }
-            //    else
-            //    {
-            //        Trace.Assert(Dock.Left == direction);
-            //        grid.Children.Remove(dropTarget);
-            //        grid.Children.Insert(index, dropItem);
-            //        grid.Children.Add(dropTarget);
-            //        Grid.SetColumn(dropItem, otherIndex);
-            //        Grid.SetColumn(newTabControl, index);
-            //    }
-            //}
         }
 
         protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
@@ -325,6 +272,66 @@ namespace General.WPF
             {
                 this.Items.Remove(visualAdded as UIElement);
                 mTabControl.Items.Add(visualAdded);
+            }
+        }
+
+        private void removeTabControl(Grid grid, TabControl control)
+        {
+            Trace.Assert(0 == control.Items.Count);
+
+            List<TabControl> controls = new List<TabControl>();
+            foreach (UIElement element in grid.Children)
+            {
+                TabControl tab = element as TabControl;
+                if (tab?.Items.Count > 0)
+                {
+                    controls.Add(tab);
+                }
+            }
+
+            grid.Children.Clear();
+            controls.Remove(control);
+            if (0 == controls.Count)
+            {
+                return;
+            }
+
+            int count = controls.Count;
+            int lastIndex = count - 1;
+            if (grid.ColumnDefinitions.Count > 0)
+            {
+                grid.ColumnDefinitions.Clear();
+                for (int i = 0; i < count; ++i)
+                {
+                    TabControl item = controls[i];
+                    Grid.SetColumn(item, i * 2);
+                    grid.Children.Add(item);
+                    this.addColumnDefinition(grid, item.ActualWidth);
+
+                    if (i < lastIndex)
+                    {
+                        this.addColumnSplitter(grid);
+                    }
+                }
+            }
+        }
+
+        private void onTabControlItemsChanged(TabControl control, NotifyCollectionChangedEventArgs e)
+        {
+            if (NotifyCollectionChangedAction.Remove == e.Action && 0 == control.Items.Count)
+            {
+                Trace.Assert(mPanelGrid == control.Parent);
+                this.removeTabControl(mPanelGrid, control);
+                if (mPanelGrid.Children.Count > 0)
+                {
+                    return;
+                }
+
+                Window window = mPanelGrid.GetTopWindow();
+                if (window?.GetType() == typeof(Window))
+                {
+                    window.Close();
+                }
             }
         }
     }
