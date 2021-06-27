@@ -21,20 +21,39 @@ namespace General.WPF
     /// <summary>
     /// TabPanel.xaml 的交互逻辑
     /// </summary>
-    public partial class TabPanel : TabControl
+    public partial class TabPanel : UserControl
     {
-        private Grid mSlotRectangle = null;
+        public const double GRID_SPLITTER_WEIGHT = 2;
+
+        static public readonly DependencyProperty ItemsProperty = DependencyProperty.Register("ItemsProperty", typeof(UIElementCollection), typeof(TabPanel), new PropertyMetadata(null));
+        /// <summary>
+        /// Gets or sets items for the TabPanel
+        /// </summary>
+        public UIElementCollection Items { get { return GetValue(ItemsProperty) as UIElementCollection; } set { SetValue(ItemsProperty, value); } }
+
+        public HashSet<TabControl> mTabControls = new HashSet<TabControl>();
 
         public TabPanel()
         {
             InitializeComponent();
+            this.Items = new UIElementCollection(this, this);
+            this.addTabControl(mTabControl);
         }
 
-        private void checkDragPosition(DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction)
+        private void addTabControl(TabControl control)
         {
-            Point position = e.GetPosition(this);
-            x = position.X / this.ActualWidth;
-            y = position.Y / this.ActualHeight;
+            mTabControls.Add(control);
+            control.DragEnter += this.onDragEnter;
+            control.DragLeave += this.onDragLeave;
+            control.DragOver += this.onDragOver;
+            control.Drop += this.onDrop;
+        }
+
+        private void checkDragPosition(TabControl control, DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction)
+        {
+            Point position = e.GetPosition(control);
+            x = position.X / control.ActualWidth;
+            y = position.Y / control.ActualHeight;
             offsetX = Math.Min(x, 1.0 - x);
             offsetY = Math.Min(y, 1.0 - y);
 
@@ -47,141 +66,105 @@ namespace General.WPF
 
             if (offsetX < offsetY)
             {
-                double halfWidth = this.ActualWidth * .5;
+                double halfWidth = control.ActualWidth * .5;
                 if (x <= .25)
                 {
                     direction = Dock.Left;
-                    rect = new Rect(0, 0, halfWidth, this.ActualHeight);
+                    rect = new Rect(0, 0, halfWidth, control.ActualHeight);
                 }
                 else
                 {
                     direction = Dock.Right;
-                    rect = new Rect(halfWidth, 0, halfWidth, this.ActualHeight);
+                    rect = new Rect(halfWidth, 0, halfWidth, control.ActualHeight);
                 }
             }
             else
             {
-                double halfHeight = this.ActualHeight * .5;
+                double halfHeight = control.ActualHeight * .5;
                 if (y <= .25)
                 {
                     direction = Dock.Top;
-                    rect = new Rect(0, 0, this.ActualWidth, halfHeight);
+                    rect = new Rect(0, 0, control.ActualWidth, halfHeight);
                 }
                 else
                 {
                     direction = Dock.Bottom;
-                    rect = new Rect(0, halfHeight, this.ActualWidth, halfHeight);
+                    rect = new Rect(0, halfHeight, control.ActualWidth, halfHeight);
                 }
             }
-            rect.Offset(this.VisualOffset);
+            rect.Offset(control.GetVisualOffset());
         }
 
-        private void fixParent()
+        private void showSlotMask()
         {
-            if (this.Parent is Window)
-            {
-                Window parent = this.Parent as Window;
-                parent.RemoveChild(this);
-
-                Grid root = new Grid();
-                //root.Background = Brushes.YellowGreen;
-                parent.Content = root;
-
-                root.Children.Add(this);
-            }
+            mSlotMask.Visibility = Visibility.Visible;
         }
 
-        private void createSlotGrid()
+        private void hideSlotMask()
         {
-            if (null != mSlotRectangle)
-            {
-                return;
-            }
-
-            this.fixParent();
-            Trace.Assert(this.Parent is Grid);
-
-            Grid grid = this.Parent as Grid;
-            mSlotRectangle = new Grid();
-            mSlotRectangle.Visibility = Visibility.Hidden;
-            mSlotRectangle.VerticalAlignment = VerticalAlignment.Top;
-            mSlotRectangle.HorizontalAlignment = HorizontalAlignment.Left;
-            mSlotRectangle.Background = Brushes.Black;
-            mSlotRectangle.Opacity = .5;
-            mSlotRectangle.IsHitTestVisible = false;
-            grid.Children.Add(mSlotRectangle);
+            mSlotMask.Visibility = Visibility.Hidden;
         }
 
-        private void destroySlotGrid()
+        private void onDragEnter(object sender, DragEventArgs e)
         {
-            if (null == mSlotRectangle)
-            {
-                return;
-            }
-
-            mSlotRectangle.Parent.RemoveChild(mSlotRectangle);
-            mSlotRectangle = null;
+            this.onDragOver(sender, e);
         }
 
-        protected override void OnDragEnter(DragEventArgs e)
+        private void onDragLeave(object sender, DragEventArgs e)
         {
-            base.OnDragEnter(e);
-
-                Trace.WriteLine($"Enter {this.Items.Count}");
-            this.createSlotGrid();
+            this.hideSlotMask();
         }
 
-        protected override void OnDragLeave(DragEventArgs e)
+        private void onDragOver(object sender, DragEventArgs e)
         {
-            base.OnDragLeave(e);
-
-                Trace.WriteLine($"Leave {this.Items.Count}");
-            this.destroySlotGrid();
-        }
-
-        protected override void OnDragOver(DragEventArgs e)
-        {
-            base.OnDragOver(e);
-
             Rect rect;
             Dock direction;
             double x, y, offsetX, offsetY;
-            this.checkDragPosition(e, out x, out y, out offsetX, out offsetY, out rect, out direction);
+            this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction);
 
             if (offsetX > .25 && offsetY > .25)
             {
-                mSlotRectangle.Visibility = Visibility.Hidden;
+                this.hideSlotMask();
                 return;
             }
 
-            mSlotRectangle.Visibility = Visibility.Visible;
-            mSlotRectangle.Width = rect.Width;
-            mSlotRectangle.Height = rect.Height;
-            mSlotRectangle.Margin = new Thickness(rect.X, rect.Y, 0, 0);
+            this.showSlotMask();
+            mSlotMask.Width = rect.Width;
+            mSlotMask.Height = rect.Height;
+            mSlotMask.Margin = new Thickness(rect.X, rect.Y, 0, 0);
         }
 
-        protected override void OnDrop(DragEventArgs e)
+        private void onDrop(object sender, DragEventArgs e)
         {
-            base.OnDrop(e);
-            this.destroySlotGrid();
+            this.hideSlotMask();
 
             Rect rect;
             Dock direction;
             double x, y, offsetX, offsetY;
-            this.checkDragPosition(e, out x, out y, out offsetX, out offsetY, out rect, out direction);
+            this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction);
+
+            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            TabControl parent = item.Parent as TabControl;
+            Window window = item.GetTopWindow();
 
             if (offsetX > .25 && offsetY > .25)
             {
                 this.createNewWindow(e);
-                return;
+                goto RESULT;
             }
 
             switch (direction)
             {
                 case Dock.Left:
                 case Dock.Right:
-                    this.seperateHorizontally(e, direction);
+                    this.seperateInColumn(sender as TabControl, e, direction);
                     break;
+            }
+
+        RESULT:
+            if (0 == parent?.Items.Count)
+            {
+                window?.Close();
             }
         }
 
@@ -193,15 +176,15 @@ namespace General.WPF
                 return;
             }
 
-            TabPanel parent = item.Parent as TabPanel;
-            Trace.Assert(this == parent);
-            parent.Items.Remove(item);
+            TabControl collection = item.Parent as TabControl;
+            //Trace.Assert(this == parent);
+            collection.Items.Remove(item);
 
             Window window = new Window();
-            window.Width = parent.ActualWidth + window.BorderThickness.Left + window.BorderThickness.Right;
-            window.Height = parent.ActualHeight + window.BorderThickness.Top + window.BorderThickness.Bottom + 30; // Height of title bar = 30
+            window.Width = collection.ActualWidth + window.BorderThickness.Left + window.BorderThickness.Right;
+            window.Height = collection.ActualHeight + window.BorderThickness.Top + window.BorderThickness.Bottom + 30; // Height of title bar = 30
 
-            parent = new TabPanel();
+            TabPanel parent = new TabPanel();
             window.Content = parent;
 
             parent.Items.Add(item);
@@ -212,120 +195,136 @@ namespace General.WPF
             window.Show();
         }
 
-        private int addColumnItem(Grid grid, double parentWidth, int insertIndex = -1)
+        private void addColumnDefinition(Grid grid, double width)
         {
             ColumnDefinition definition = new ColumnDefinition();
-            definition.Width = new GridLength((parentWidth - 2) * .5, GridUnitType.Star);
-            if (insertIndex >= 0)
-            {
-                grid.ColumnDefinitions.Insert(insertIndex, definition);
-                return insertIndex;
-            }
+            definition.Width = new GridLength(width, GridUnitType.Star);
             grid.ColumnDefinitions.Add(definition);
-            return grid.ColumnDefinitions.Count - 1;
         }
 
-        private void addColumnSplitter(Grid grid, int insertIndex = -1)
+        private void addColumnSplitter(Grid grid)
         {
             ColumnDefinition definition = new ColumnDefinition();
-            definition.Width = new GridLength(2, GridUnitType.Pixel);
+            definition.Width = new GridLength(GRID_SPLITTER_WEIGHT, GridUnitType.Pixel);
 
             GridSplitter splitter = new GridSplitter();
             splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
             splitter.ResizeDirection = GridResizeDirection.Columns;
-            splitter.Background = Brushes.Black;
+            splitter.Background = Brushes.Transparent;
 
-            if (insertIndex >= 0)
+            grid.ColumnDefinitions.Add(definition);
+            Grid.SetColumn(splitter, grid.ColumnDefinitions.Count - 1);
+            grid.Children.Add(splitter);
+        }
+
+        private void insertColumn(Grid grid, TabControl control, TabControl reference, Dock direction)
+        {
+            List<TabControl> controls = new List<TabControl>();
+            foreach (UIElement element in grid.Children)
             {
-                grid.ColumnDefinitions.Insert(insertIndex, definition);
-                Grid.SetColumn(splitter, insertIndex);
-                (this.Parent as Grid).Children.Insert(insertIndex, splitter);
+                if (element is TabControl)
+                {
+                    controls.Add(element as TabControl);
+                }
             }
-            else
+
+            int index = controls.IndexOf(reference);
+            Trace.Assert(index > -1);
+            controls.Insert(Dock.Left == direction ? index : index + 1, control);
+
+            grid.Children.Clear();
+            grid.ColumnDefinitions.Clear();
+            int count = controls.Count;
+            int lastIndex = count - 1;
+            double newWidth = (reference.ActualWidth - GRID_SPLITTER_WEIGHT) * .5;
+            for (int i = 0; i < count; ++i)
             {
-                grid.ColumnDefinitions.Add(definition);
-                Grid.SetColumn(splitter, grid.ColumnDefinitions.Count - 1);
-                (this.Parent as Grid).Children.Add(splitter);
+                TabControl item = controls[i];
+                Grid.SetColumn(item, i * 2);
+                grid.Children.Add(item);
+                this.addColumnDefinition(grid, item == control || item == reference ? newWidth : item.ActualWidth);
+
+                if (i < lastIndex)
+                {
+                    this.addColumnSplitter(grid);
+                }
             }
         }
 
-        private void seperateHorizontally(DragEventArgs e, Dock direction)
+        private void seperateInColumn(TabControl dropTarget, DragEventArgs e, Dock direction)
         {
-            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
-            if (null == item)
+            TabItem dropItem = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (null == dropItem)
             {
                 return;
             }
 
-            this.fixParent();
+            TabControl oldTabControl = dropItem.Parent as TabControl;
+            Trace.Assert(null != oldTabControl);
+            Trace.Assert(null != dropTarget);
 
-            Grid grid = this.Parent as Grid;
+            Grid grid = oldTabControl.Parent as Grid;
             Trace.Assert(null != grid);
 
-            Trace.Assert(this == item.Parent);
-            this.Items.Remove(item);
+            oldTabControl.Items.Remove(dropItem);
 
-            TabPanel other = new TabPanel();
-            other.Items.Add(item);
+            TabControl newTabControl = new TabControl();
+            newTabControl.Items.Add(dropItem);
+            this.addTabControl(newTabControl);
 
-            int index = Grid.GetColumn(this);
-            if (0 == index && 0 == grid.ColumnDefinitions.Count)
-            {
-                this.addColumnItem(grid, this.ActualWidth);
-            }
+            this.insertColumn(grid, newTabControl, dropTarget, direction);
 
-            int lastIndex = grid.ColumnDefinitions.Count - 1;
-            if (index < lastIndex)
-            {
-                int insertIndex = index + 1;
-                this.addColumnSplitter(grid, insertIndex++);
-                int otherIndex = this.addColumnItem(grid, this.ActualWidth, insertIndex);
-                grid.ColumnDefinitions[index].Width = grid.ColumnDefinitions[otherIndex].Width;
-                grid.Children.Insert(insertIndex, other);
-                Grid.SetColumn(other, insertIndex);
+            //int lastIndex = grid.ColumnDefinitions.Count - 1;
+            //if (index < lastIndex)
+            //{
+            //    int insertIndex = index + 1;
+            //    this.addColumnSplitter(grid, insertIndex++);
+            //    int otherIndex = this.addColumnItem(grid, dropTarget.ActualWidth, insertIndex);
+            //    grid.ColumnDefinitions[index].Width = grid.ColumnDefinitions[otherIndex].Width;
+            //    grid.Children.Insert(insertIndex, newTabControl);
+            //    Grid.SetColumn(newTabControl, insertIndex);
 
-                UIElement[] elements = new UIElement[grid.Children.Count];
-                grid.Children.CopyTo(elements, 0);
-                foreach (UIElement element in elements.Skip(insertIndex+1))
-                {
-                    int targetIndex = Grid.GetColumn(element) + 2;
-                    Grid.SetColumn(element, targetIndex);
-                    if (element is TabItem)
-                    {
-                        grid.ColumnDefinitions[targetIndex].Width = new GridLength((element as TabItem).ActualWidth, GridUnitType.Star);
-                    }
-                }
-            }
-            else
-            {
-                this.addColumnSplitter(grid);
-                int otherIndex = this.addColumnItem(grid, this.ActualWidth);
-                if (Dock.Right == direction)
-                {
-                    grid.Children.Add(other);
-                    Grid.SetColumn(other, otherIndex);
-                }
-                else
-                {
-                    Trace.Assert(Dock.Left == direction);
-                    grid.Children.Add(other);
-                    Grid.SetColumn(item, otherIndex);
-                    Grid.SetColumn(other, index);
-                }
-            }
+            //    UIElement[] elements = new UIElement[grid.Children.Count];
+            //    grid.Children.CopyTo(elements, 0);
+            //    foreach (UIElement element in elements.Skip(insertIndex + 1))
+            //    {
+            //        int targetIndex = Grid.GetColumn(element) + 2;
+            //        Grid.SetColumn(element, targetIndex);
+            //        if (element is TabItem)
+            //        {
+            //            grid.ColumnDefinitions[targetIndex].Width = new GridLength((element as TabItem).ActualWidth, GridUnitType.Star);
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    this.addColumnSplitter(grid);
+            //    int otherIndex = this.addColumnItem(grid, dropTarget.ActualWidth);
+            //    if (Dock.Right == direction)
+            //    {
+            //        grid.Children.Add(newTabControl);
+            //        Grid.SetColumn(newTabControl, otherIndex);
+            //    }
+            //    else
+            //    {
+            //        Trace.Assert(Dock.Left == direction);
+            //        grid.Children.Remove(dropTarget);
+            //        grid.Children.Insert(index, dropItem);
+            //        grid.Children.Add(dropTarget);
+            //        Grid.SetColumn(dropItem, otherIndex);
+            //        Grid.SetColumn(newTabControl, index);
+            //    }
+            //}
         }
 
-        protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+        protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
         {
-            base.OnItemsChanged(e);
+            base.OnVisualChildrenChanged(visualAdded, visualRemoved);
 
-            if (NotifyCollectionChangedAction.Remove == e.Action && 0 == this.Items.Count)
+            if (visualAdded is TabItem)
             {
-                Window window = this.Parent as Window;
-                if (typeof(Window) == window?.GetType())
-                {
-                    window.Close();
-                }
+                this.Items.Remove(visualAdded as UIElement);
+                mTabControl.Items.Add(visualAdded);
             }
         }
     }
