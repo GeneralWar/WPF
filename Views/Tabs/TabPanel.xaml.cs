@@ -292,6 +292,11 @@ namespace General.WPF
                 return;
             }
 
+            if (dropTarget == dropItem.Parent && 1 == dropTarget.Items.Count)
+            {
+                return;
+            }
+
             TabControl oldTabControl = dropItem.Parent as TabControl;
             Trace.Assert(null != oldTabControl);
             Trace.Assert(null != dropTarget);
@@ -379,14 +384,15 @@ namespace General.WPF
         {
             if (NotifyCollectionChangedAction.Remove == e.Action && 0 == control.Items.Count)
             {
-                Trace.Assert(mPanelGrid == control.Parent);
-                this.removeTabControl(mPanelGrid, control);
-                if (mPanelGrid.Children.Count > 0)
+                Grid grid = control.Parent as Grid;
+                Trace.Assert(mPanelGrid == grid);
+                this.removeTabControl(grid, control);
+                if (grid.Children.Count > 0)
                 {
                     return;
                 }
 
-                Window window = mPanelGrid.GetTopWindow();
+                Window window = grid.GetTopWindow();
                 if (window?.GetType() == typeof(Window))
                 {
                     window.Close();
