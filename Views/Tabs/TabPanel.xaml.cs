@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Xml;
 
 namespace General.WPF
 {
@@ -433,9 +435,139 @@ namespace General.WPF
             }
         }
 
+        private const string ATTRIBUTE_NAME = "Name";
+        private const string ATTRIBUTE_TYPE = "Type";
+        private const string ATTRIBUTE_SIZE = "Size";
+        private const string ATTRIBUTE_HEADER = "Header";
+        private const string ATTRIBUTE_DIRECTION = "Direction";
+        private const string ATTRIBUTE_CONTENT_TYPE = "Content";
+        private const string ATTRIBUTE_CONTENT_STRING = "Content";
+
+        private const string NAME_ROOT = "Root";
+        private const string NAME_GRID = "Grid";
+        private const string NAME_ITEM = "Item";
+        private const string NAME_TAB = "Tab";
+
+        private void saveLayout(XmlElement element, FrameworkElement grid)
+        {
+            element.SetAttribute(ATTRIBUTE_NAME, grid.Name);
+            element.SetAttribute(ATTRIBUTE_SIZE, $"{(int)Math.Round(grid.ActualWidth)},{(int)Math.Round(grid.ActualHeight)}");
+            element.SetAttribute(ATTRIBUTE_TYPE, grid.GetType().FullName);
+        }
+
+        private void saveLayout(XmlElement element, TabControl control)
+        {
+            this.saveLayout(element, control as FrameworkElement);
+            foreach (UIElement child in control.Items)
+            {
+                XmlElement e = element.OwnerDocument.CreateElement(NAME_ITEM);
+                this.saveLayout(e, child as FrameworkElement);
+                if (child is TabItem)
+                {
+                    TabItem item = child as TabItem;
+                    e.SetAttribute(ATTRIBUTE_HEADER, item.Header.ToString());
+                    e.SetAttribute(ATTRIBUTE_CONTENT_TYPE, item.Content?.GetType().FullName ?? "");
+                    e.SetAttribute(ATTRIBUTE_CONTENT_STRING, item.Content?.ToString() ?? "");
+                }
+                element.AppendChild(e);
+            }
+        }
+
+        private void saveLayout(XmlElement element, Grid grid)
+        {
+            this.saveLayout(element, grid as FrameworkElement);
+            element.SetAttribute(ATTRIBUTE_DIRECTION, (grid.RowDefinitions.Count > 0 ? GridResizeDirection.Rows : GridResizeDirection.Columns).ToString());
+            foreach (UIElement child in grid.Children)
+            {
+                if (child is GridSplitter)
+                {
+                    continue;
+                }
+
+                Trace.Assert(child is FrameworkElement);
+
+                XmlElement e;
+                if (child is Grid)
+                {
+                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_GRID), child as Grid);
+                }
+                else
+                {
+                    Trace.Assert(child is TabControl);
+                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_TAB), child as TabControl);
+                }
+                element.AppendChild(e);
+            }
+        }
+
         public string SaveLayout()
         {
-            return "";
+            XmlDocument document = new XmlDocument();
+            XmlElement root = document.CreateElement(NAME_ROOT);
+            document.AppendChild(root);
+
+            this.saveLayout(root, mPanelGrid);
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (TextWriter writer = new StreamWriter(stream, Encoding.UTF8))
+                {
+                    document.Save(stream);
+                    return Encoding.UTF8.GetString(stream.ToArray());
+                }
+            }
+        }
+
+        private void loadLayout(XmlElement element, FrameworkElement grid)
+        {
+            element.SetAttribute(ATTRIBUTE_NAME, grid.Name);
+            element.SetAttribute(ATTRIBUTE_SIZE, $"{(int)Math.Round(grid.ActualWidth)},{(int)Math.Round(grid.ActualHeight)}");
+            element.SetAttribute(ATTRIBUTE_TYPE, grid.GetType().FullName);
+        }
+
+        private void loadLayout(XmlElement element, TabControl control)
+        {
+            this.saveLayout(element, control as FrameworkElement);
+            foreach (UIElement child in control.Items)
+            {
+                XmlElement e = element.OwnerDocument.CreateElement(NAME_ITEM);
+                this.saveLayout(e, child as FrameworkElement);
+                if (child is TabItem)
+                {
+                    TabItem item = child as TabItem;
+                    e.SetAttribute(ATTRIBUTE_HEADER, item.Header.ToString());
+                    e.SetAttribute(ATTRIBUTE_CONTENT_TYPE, item.Content?.GetType().FullName ?? "");
+                    e.SetAttribute(ATTRIBUTE_CONTENT_STRING, item.Content?.ToString() ?? "");
+                }
+                element.AppendChild(e);
+            }
+        }
+
+        private void loadLayout(XmlElement element, Grid grid)
+        {
+            this.saveLayout(element, grid as FrameworkElement);
+            element.SetAttribute(ATTRIBUTE_DIRECTION, (grid.RowDefinitions.Count > 0 ? GridResizeDirection.Rows : GridResizeDirection.Columns).ToString());
+            foreach (UIElement child in grid.Children)
+            {
+                if (child is GridSplitter)
+                {
+                    continue;
+                }
+
+                Trace.Assert(child is FrameworkElement);
+
+                XmlElement e;
+                if (child is Grid)
+                {
+                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_GRID), child as Grid);
+                }
+                else
+                {
+                    Trace.Assert(child is TabControl);
+                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_TAB), child as TabControl);
+                }
+                element.AppendChild(e);
+            }
         }
 
         public void LoadLayout(string layout)
