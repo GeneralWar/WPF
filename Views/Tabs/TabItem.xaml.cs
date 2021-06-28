@@ -34,5 +34,10 @@ namespace General.WPF
                 DragDrop.DoDragDrop(this, this, DragDropEffects.Move);
             }
         }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
     }
 }
