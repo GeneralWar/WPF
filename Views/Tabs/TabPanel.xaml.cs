@@ -150,17 +150,7 @@ namespace General.WPF
                 return;
             }
 
-            switch (direction)
-            {
-                case Dock.Left:
-                case Dock.Right:
-                    this.seperateInColumn(sender as TabControl, e, direction);
-                    break;
-                case Dock.Top:
-                case Dock.Bottom:
-                    this.seperateInRow(sender as TabControl, e, direction);
-                    break;
-            }
+            this.seperate(sender as TabControl, e, direction);
         }
 
         private void createNewWindow(DragEventArgs e)
@@ -204,67 +194,13 @@ namespace General.WPF
 
             GridSplitter splitter = new GridSplitter();
             splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+            splitter.VerticalAlignment = VerticalAlignment.Stretch;
+            splitter.ResizeDirection = GridResizeDirection.Columns;
             splitter.Background = Brushes.Transparent;
 
             grid.ColumnDefinitions.Add(definition);
             Grid.SetColumn(splitter, grid.ColumnDefinitions.Count - 1);
             grid.Children.Add(splitter);
-        }
-
-        private void insertColumn(Grid grid, TabControl control, TabControl reference, Dock direction)
-        {
-            List<TabControl> controls = new List<TabControl>();
-            foreach (UIElement element in grid.Children)
-            {
-                if (element is TabControl)
-                {
-                    controls.Add(element as TabControl);
-                }
-            }
-
-            int index = controls.IndexOf(reference);
-            Trace.Assert(index > -1);
-            controls.Insert(Dock.Left == direction ? index : index + 1, control);
-
-            grid.Children.Clear();
-            grid.ColumnDefinitions.Clear();
-            int count = controls.Count;
-            int lastIndex = count - 1;
-            double newWidth = (reference.ActualWidth - GRID_SPLITTER_WEIGHT) * .5;
-            for (int i = 0; i < count; ++i)
-            {
-                TabControl item = controls[i];
-                Grid.SetColumn(item, i * 2);
-                grid.Children.Add(item);
-                this.addColumnDefinition(grid, item == control || item == reference ? newWidth : item.ActualWidth);
-
-                if (i < lastIndex)
-                {
-                    this.addColumnSplitter(grid);
-                }
-            }
-        }
-
-        private void seperateInColumn(TabControl dropTarget, DragEventArgs e, Dock direction)
-        {
-            TabItem dropItem = e.Data.GetData(typeof(TabItem)) as TabItem;
-            if (null == dropItem)
-            {
-                return;
-            }
-
-            TabControl oldTabControl = dropItem.Parent as TabControl;
-            Trace.Assert(null != oldTabControl);
-            Trace.Assert(null != dropTarget);
-            oldTabControl.Items.Remove(dropItem);
-
-            TabControl newTabControl = new TabControl();
-            newTabControl.Items.Add(dropItem);
-            this.addTabControl(newTabControl);
-
-            Grid grid = dropTarget.Parent as Grid;
-            Trace.Assert(null != grid);
-            this.insertColumn(grid, newTabControl, dropTarget, direction);
         }
 
         private void addRowDefinition(Grid grid, double width)
@@ -280,7 +216,9 @@ namespace General.WPF
             definition.Height = new GridLength(GRID_SPLITTER_WEIGHT, GridUnitType.Pixel);
 
             GridSplitter splitter = new GridSplitter();
+            splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
             splitter.VerticalAlignment = VerticalAlignment.Stretch;
+            splitter.ResizeDirection = GridResizeDirection.Rows;
             splitter.Background = Brushes.Transparent;
 
             grid.RowDefinitions.Add(definition);
@@ -288,7 +226,7 @@ namespace General.WPF
             grid.Children.Add(splitter);
         }
 
-        private void insertRow(Grid grid, TabControl control, TabControl reference, Dock direction)
+        private void insertTabPanel(Grid grid, TabControl control, TabControl reference, Dock direction)
         {
             List<TabControl> controls = new List<TabControl>();
             foreach (UIElement element in grid.Children)
@@ -299,30 +237,54 @@ namespace General.WPF
                 }
             }
 
+            double newLength;
+            IList definitionCollection;
+            Action<UIElement, int> SetIndex;
+            Action<Grid, double> AddDefinition;
+            Action<Grid> AddSplitter;
             int index = controls.IndexOf(reference);
             Trace.Assert(index > -1);
-            controls.Insert(Dock.Top == direction ? index : index + 1, control);
+            if (Dock.Left == direction || Dock.Right == direction)
+            {
+                newLength = (reference.ActualWidth - GRID_SPLITTER_WEIGHT) * .5;
+                definitionCollection = grid.ColumnDefinitions;
+                AddDefinition = this.addColumnDefinition;
+                AddSplitter = this.addColumnSplitter;
+                SetIndex = Grid.SetColumn;
+                controls.Insert(Dock.Left == direction ? index : index + 1, control);
+            }
+            else
+            {
+                Trace.Assert(Dock.Top == direction || Dock.Bottom == direction);
+
+                newLength = (reference.ActualHeight - GRID_SPLITTER_WEIGHT) * .5;
+                definitionCollection = grid.RowDefinitions;
+                AddDefinition = this.addRowDefinition;
+                AddSplitter = this.addRowSplitter;
+                SetIndex = Grid.SetRow;
+                controls.Insert(Dock.Top == direction ? index : index + 1, control);
+            }
 
             grid.Children.Clear();
-            grid.RowDefinitions.Clear();
+            definitionCollection.Clear();
             int count = controls.Count;
             int lastIndex = count - 1;
             double newWidth = (reference.ActualWidth - GRID_SPLITTER_WEIGHT) * .5;
             for (int i = 0; i < count; ++i)
             {
                 TabControl item = controls[i];
-                Grid.SetRow(item, i * 2);
+                SetIndex(item, i * 2);
                 grid.Children.Add(item);
-                this.addRowDefinition(grid, item == control || item == reference ? newWidth : item.ActualWidth);
+                AddDefinition(grid, item == control || item == reference ? newLength : item.ActualWidth);
 
                 if (i < lastIndex)
                 {
-                    this.addRowSplitter(grid);
+                    AddSplitter(grid);
                 }
             }
         }
 
-        private void seperateInRow(TabControl dropTarget, DragEventArgs e, Dock direction)
+        private void seperate(TabControl dropTarget, DragEventArgs e, Dock direction)
         {
             TabItem dropItem = e.Data.GetData(typeof(TabItem)) as TabItem;
             if (null == dropItem)
@@ -339,13 +301,9 @@ namespace General.WPF
             newTabControl.Items.Add(dropItem);
             this.addTabControl(newTabControl);
 
-
-            Grid targetGrid = dropTarget.Parent as Grid; 
+            Grid targetGrid = dropTarget.Parent as Grid;
             Trace.Assert(null != targetGrid);
-            this.insertRow(targetGrid, newTabControl, dropTarget, direction);
-
-            UIElement[] children = new UIElement[targetGrid.Children.Count];
-            targetGrid.Children.CopyTo(children, 0);
+            this.insertTabPanel(targetGrid, newTabControl, dropTarget, direction);
         }
 
         protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
@@ -398,7 +356,7 @@ namespace General.WPF
                     }
                 }
             }
-            else 
+            else
             {
                 Trace.Assert(grid.RowDefinitions.Count > 0);
                 grid.RowDefinitions.Clear();
