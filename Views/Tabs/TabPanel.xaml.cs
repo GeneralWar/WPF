@@ -27,6 +27,7 @@ namespace General.WPF
     public partial class TabPanel : UserControl
     {
         public const double GRID_SPLITTER_WEIGHT = 2;
+        public const double TAB_MASK_WIDTH = 6;
 
         static public readonly DependencyProperty ItemsProperty = DependencyProperty.Register("ItemsProperty", typeof(UIElementCollection), typeof(TabPanel), new PropertyMetadata(null));
         /// <summary>
@@ -53,19 +54,62 @@ namespace General.WPF
             control.onItemsChanged += onTabControlItemsChanged;
         }
 
-        private void checkDragPosition(TabControl control, DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction)
+        private void checkDragPosition(TabControl control, DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction, out int tabIndex)
         {
+            Trace.Assert(control.Items.Count > 0);
+
             Point position = e.GetPosition(control);
             x = position.X / control.ActualWidth;
             y = position.Y / control.ActualHeight;
             offsetX = Math.Min(x, 1.0 - x);
             offsetY = Math.Min(y, 1.0 - y);
+            direction = (Dock)(-1);
+            tabIndex = -1;
 
             if (offsetX > .25 && offsetY > .25)
             {
-                direction = (Dock)(-1);
                 rect = new Rect();
                 return;
+            }
+
+            //IInputElement hit = control.InputHitTest(position);
+            //if (hit is TextBlock)
+            //{
+            //    tabIndex = control.Items.IndexOf(hit);
+            //    if(tabIndex > -1)
+            //    {
+            //        return;
+            //    }
+            //}
+            int itemCount = control.Items.Count;
+            Trace.Assert(itemCount > 0);
+            for (int i = 0; i < itemCount; ++i)
+            {
+                FrameworkElement item = control.Items[i] as FrameworkElement;
+                if (null == item)
+                {
+                    continue;
+                }
+
+                IInputElement hit = item.InputHitTest(e.GetPosition(item));
+                if (null == hit)
+                {
+                    continue;
+                }
+
+                Point start = control.PointFromScreen(item.PointToScreen(new Point()));
+                rect = new Rect(start.X, start.Y, TAB_MASK_WIDTH, item.ActualHeight);
+                tabIndex = i;
+                goto OFFSET;
+            }
+
+            FrameworkElement lastTab = control.Items[itemCount - 1] as FrameworkElement;
+            if (position.Y < lastTab.ActualHeight)
+            {
+                Point start = control.PointFromScreen(lastTab.PointToScreen(new Point(lastTab.ActualWidth, 0)));
+                rect = new Rect(start.X, start.Y, TAB_MASK_WIDTH, lastTab.ActualHeight);
+                tabIndex = itemCount;
+                goto OFFSET;
             }
 
             if (offsetX < offsetY)
@@ -96,6 +140,8 @@ namespace General.WPF
                     rect = new Rect(0, halfHeight, control.ActualWidth, halfHeight);
                 }
             }
+
+        OFFSET:
             Point offset = mRootGrid.PointFromScreen(control.PointToScreen(new Point()));
             rect.Offset(offset.X, offset.Y);
         }
@@ -123,9 +169,10 @@ namespace General.WPF
         private void onDragOver(object sender, DragEventArgs e)
         {
             Rect rect;
+            int tabIndex;
             Dock direction;
             double x, y, offsetX, offsetY;
-            this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction);
+            this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction, out tabIndex);
 
             if (offsetX > .25 && offsetY > .25)
             {
@@ -144,9 +191,39 @@ namespace General.WPF
             this.hideSlotMask();
 
             Rect rect;
+            int tabIndex;
             Dock direction;
             double x, y, offsetX, offsetY;
-            this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction);
+            this.checkDragPosition(sender as TabControl, e, out x, out y, out offsetX, out offsetY, out rect, out direction, out tabIndex);
+
+            if (tabIndex > -1)
+            {
+                TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
+                Trace.Assert(null != item);
+
+                TabControl parent = item.Parent as TabControl;
+                Trace.Assert(null != parent);
+
+                int index = parent.Items.IndexOf(item);
+                Trace.Assert(index > -1);
+
+                TabControl control = sender as TabControl;
+                if (control == parent && (tabIndex == index || tabIndex - 1 == index))
+                {
+                    return;
+                }
+
+                parent.Items.RemoveAt(index);
+                if (tabIndex < control.Items.Count)
+                {
+                    control.Items.Insert(tabIndex, item);
+                }
+                else
+                {
+                    control.Items.Add(item);
+                }
+                return;
+            }
 
             if (offsetX > .25 && offsetY > .25)
             {

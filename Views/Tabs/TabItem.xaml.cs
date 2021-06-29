@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +32,7 @@ namespace General.WPF
 
             if (MouseButtonState.Pressed == e.LeftButton)
             {
+                //Trace.Assert(e.Source == e.OriginalSource);
                 DragDrop.DoDragDrop(this, this, DragDropEffects.Move);
             }
         }
