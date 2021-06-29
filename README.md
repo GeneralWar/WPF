@@ -9,4 +9,4 @@ A custom view which has a HWND, in order to embed Vulkan in WPF, you can embed O
 
 一个可以随意拖拽的标签页，可以把分页拖出来独立布局，也可以再拖回去合并在一起，各种编辑器最基础的布局方式，就像这样：  
 A tab panel which can drag tab item out as a standard window, or drop tab item in to merge them, like common editors support:  
-[image](./Images/TabPanel.png)
+![avatar](./Images/TabPanel.png)
