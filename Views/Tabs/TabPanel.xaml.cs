@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -439,20 +440,25 @@ namespace General.WPF
         private const string ATTRIBUTE_TYPE = "Type";
         private const string ATTRIBUTE_SIZE = "Size";
         private const string ATTRIBUTE_HEADER = "Header";
+        private const string ATTRIBUTE_ASSEMBLY = "Assembly";
         private const string ATTRIBUTE_DIRECTION = "Direction";
-        private const string ATTRIBUTE_CONTENT_TYPE = "Content";
-        private const string ATTRIBUTE_CONTENT_STRING = "Content";
+        private const string ATTRIBUTE_CONTENT_TYPE = "ContentType";
+        private const string ATTRIBUTE_CONTENT_STRING = "ContentString";
+        private const string ATTRIBUTE_CONTENT_ASSEMBLY = "ContentAssembly";
 
         private const string NAME_ROOT = "Root";
         private const string NAME_GRID = "Grid";
         private const string NAME_ITEM = "Item";
         private const string NAME_TAB = "Tab";
 
-        private void saveLayout(XmlElement element, FrameworkElement grid)
+        private void saveLayout(XmlElement element, FrameworkElement item)
         {
-            element.SetAttribute(ATTRIBUTE_NAME, grid.Name);
-            element.SetAttribute(ATTRIBUTE_SIZE, $"{(int)Math.Round(grid.ActualWidth)},{(int)Math.Round(grid.ActualHeight)}");
-            element.SetAttribute(ATTRIBUTE_TYPE, grid.GetType().FullName);
+            element.SetAttribute(ATTRIBUTE_NAME, item.Name);
+            element.SetAttribute(ATTRIBUTE_SIZE, $"{(int)Math.Round(item.ActualWidth)},{(int)Math.Round(item.ActualHeight)}");
+
+            Type type = item.GetType();
+            element.SetAttribute(ATTRIBUTE_TYPE, type.FullName);
+            element.SetAttribute(ATTRIBUTE_ASSEMBLY, type.Assembly.GetName().Name);
         }
 
         private void saveLayout(XmlElement element, TabControl control)
@@ -466,8 +472,14 @@ namespace General.WPF
                 {
                     TabItem item = child as TabItem;
                     e.SetAttribute(ATTRIBUTE_HEADER, item.Header.ToString());
-                    e.SetAttribute(ATTRIBUTE_CONTENT_TYPE, item.Content?.GetType().FullName ?? "");
-                    e.SetAttribute(ATTRIBUTE_CONTENT_STRING, item.Content?.ToString() ?? "");
+                    if (null != item.Content)
+                    {
+                        e.SetAttribute(ATTRIBUTE_CONTENT_STRING, item.Content.ToString());
+
+                        Type type = item.Content.GetType();
+                        e.SetAttribute(ATTRIBUTE_CONTENT_TYPE, type.FullName);
+                        e.SetAttribute(ATTRIBUTE_CONTENT_ASSEMBLY, type.Assembly.GetName().Name);
+                    }
                 }
                 element.AppendChild(e);
             }
@@ -518,61 +530,114 @@ namespace General.WPF
             }
         }
 
-        private void loadLayout(XmlElement element, FrameworkElement grid)
+        private FrameworkElement loadLayout(XmlElement element, FrameworkElement item = null)
         {
-            element.SetAttribute(ATTRIBUTE_NAME, grid.Name);
-            element.SetAttribute(ATTRIBUTE_SIZE, $"{(int)Math.Round(grid.ActualWidth)},{(int)Math.Round(grid.ActualHeight)}");
-            element.SetAttribute(ATTRIBUTE_TYPE, grid.GetType().FullName);
+            if (element.HasAttribute(ATTRIBUTE_ASSEMBLY) && element.HasAttribute(ATTRIBUTE_TYPE))
+            {
+                string typename = element.GetAttribute(ATTRIBUTE_TYPE);
+                if (null == item)
+                {
+                    string assemblyName = element.GetAttribute(ATTRIBUTE_ASSEMBLY);
+                    Assembly assembly = Assembly.Load(assemblyName);
+                    Type type = assembly.GetType(typename);
+                    item = Activator.CreateInstance(type) as FrameworkElement;
+                }
+                Trace.Assert(item.GetType().FullName == typename);
+            }
+            if (element.HasAttribute(ATTRIBUTE_NAME))
+            {
+                item.Name = element.GetAttribute(ATTRIBUTE_NAME);
+            }
+            if (element.HasAttribute(ATTRIBUTE_SIZE))
+            {
+                string sizeContent = element.GetAttribute(ATTRIBUTE_SIZE);
+                if (!string.IsNullOrWhiteSpace(sizeContent))
+                {
+                    string[] parts = sizeContent.Split(",");
+                    if (2 == parts.Length)
+                    {
+                        item.Width = double.Parse(parts[0].Trim());
+                        item.Height = double.Parse(parts[1].Trim());
+                    }
+                }
+            }
+            return item;
         }
 
         private void loadLayout(XmlElement element, TabControl control)
         {
             this.saveLayout(element, control as FrameworkElement);
-            foreach (UIElement child in control.Items)
+            foreach (XmlElement child in element.ChildNodes)
             {
-                XmlElement e = element.OwnerDocument.CreateElement(NAME_ITEM);
-                this.saveLayout(e, child as FrameworkElement);
-                if (child is TabItem)
+                TabItem item = this.loadLayout(child) as TabItem;
+                Trace.Assert(null != item);
+
+                item.Header = child.GetAttribute(ATTRIBUTE_HEADER);
+
+                string assemblyName = child.GetAttribute(ATTRIBUTE_CONTENT_ASSEMBLY);
+                Assembly assembly = Assembly.Load(assemblyName);
+                Type contentType = assembly.GetType(child.GetAttribute(ATTRIBUTE_CONTENT_TYPE));
+                if (typeof(string) == contentType)
                 {
-                    TabItem item = child as TabItem;
-                    e.SetAttribute(ATTRIBUTE_HEADER, item.Header.ToString());
-                    e.SetAttribute(ATTRIBUTE_CONTENT_TYPE, item.Content?.GetType().FullName ?? "");
-                    e.SetAttribute(ATTRIBUTE_CONTENT_STRING, item.Content?.ToString() ?? "");
+                    item.Content = child.GetAttribute(ATTRIBUTE_CONTENT_STRING);
                 }
-                element.AppendChild(e);
+                else
+                {
+                    item.Content = Activator.CreateInstance(contentType);
+                }
+                control.Items.Add(item);
             }
+            this.addTabControl(control);
         }
 
         private void loadLayout(XmlElement element, Grid grid)
         {
-            this.saveLayout(element, grid as FrameworkElement);
-            element.SetAttribute(ATTRIBUTE_DIRECTION, (grid.RowDefinitions.Count > 0 ? GridResizeDirection.Rows : GridResizeDirection.Columns).ToString());
-            foreach (UIElement child in grid.Children)
+            this.loadLayout(element, grid as FrameworkElement);
+
+            Trace.Assert(element.HasAttribute(ATTRIBUTE_DIRECTION));
+
+            GridResizeDirection direction = Enum.Parse<GridResizeDirection>(element.GetAttribute(ATTRIBUTE_DIRECTION), true);
+            List<FrameworkElement> controls = new List<FrameworkElement>();
+            foreach (XmlElement child in element.ChildNodes)
             {
-                if (child is GridSplitter)
+                FrameworkElement control = this.loadLayout(child);
+                if (control is TabControl)
                 {
-                    continue;
+                    this.loadLayout(child, control as TabControl);
                 }
-
-                Trace.Assert(child is FrameworkElement);
-
-                XmlElement e;
-                if (child is Grid)
+                else if (control is Grid)
                 {
-                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_GRID), child as Grid);
+                    this.loadLayout(child, control as Grid);
                 }
-                else
-                {
-                    Trace.Assert(child is TabControl);
-                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_TAB), child as TabControl);
-                }
-                element.AppendChild(e);
+                controls.Add(control);
             }
+            if (GridResizeDirection.Rows == direction)
+            {
+                this.groupGrid(grid, controls, Grid.SetRow, this.addRowDefinition, this.addRowSplitter, item => item.Height);
+            }
+            else
+            {
+                Trace.Assert(GridResizeDirection.Columns == direction);
+                this.groupGrid(grid, controls, Grid.SetColumn, this.addColumnDefinition, this.addColumnSplitter, item => item.Width);
+            }
+            controls.ForEach(c => c.Width = c.Height = double.NaN);
         }
 
         public void LoadLayout(string layout)
         {
+            XmlDocument document = new XmlDocument();
+            document.LoadXml(layout);
 
+            XmlElement root = document.FirstChild as XmlElement;
+            if (null == root || NAME_ROOT != root.Name)
+            {
+                return;
+            }
+
+            mPanelGrid.Children.Clear();
+            mPanelGrid.RowDefinitions.Clear();
+            mPanelGrid.ColumnDefinitions.Clear();
+            this.loadLayout(root, mPanelGrid);
         }
     }
 }
