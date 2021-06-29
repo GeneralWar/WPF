@@ -450,10 +450,10 @@ namespace General.WPF
             }
             else if (visualAdded is Grid)
             {
-                mPanelGrid.Children.Clear();
-                mPanelGrid.RowDefinitions.Clear();
-                mPanelGrid.ColumnDefinitions.Clear();
-                this.groupGrid(visualAdded as Grid, mPanelGrid);
+                //mPanelGrid.Children.Clear();
+                //mPanelGrid.RowDefinitions.Clear();
+                //mPanelGrid.ColumnDefinitions.Clear();
+                //this.groupGrid(visualAdded as Grid, mPanelGrid);
             }
         }
 
@@ -741,6 +741,7 @@ namespace General.WPF
             mPanelGrid.RowDefinitions.Clear();
             mPanelGrid.ColumnDefinitions.Clear();
             this.loadLayout(root, mPanelGrid);
+            mPanelGrid.Width = mPanelGrid.Height = double.NaN;
         }
     }
 }

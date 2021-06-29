@@ -13,6 +13,9 @@
     <Compile Update="Views\Renders\RenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\Tabs\TabItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
