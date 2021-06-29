@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dragablz" Version="0.0.3.223" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Views\Renders\RenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
