@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CrossEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -429,7 +430,7 @@ namespace General.WPF
                     target.ColumnDefinitions.Add(definition);
                 }
             }
-            else 
+            else
             {
                 Trace.Assert(source.RowDefinitions.Count > 0);
                 foreach (RowDefinition definition in source.RowDefinitions)

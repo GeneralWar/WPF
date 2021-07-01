@@ -49,10 +49,12 @@ namespace General.WPF
 
         struct RECT
         {
+#pragma warning disable 649
             public int left;
             public int top;
             public int right;
             public int bottom;
+#pragma warning restore 649
 
             public int Width => this.right - this.left;
             public int Height => this.bottom - this.top;

@@ -11,6 +11,11 @@ namespace General.WPF
 
             if (MouseButtonState.Pressed == e.LeftButton)
             {
+                IInputElement input = this.InputHitTest(e.GetPosition(this));
+                if (null == input)
+                {
+                    return;
+                }
                 //Trace.Assert(e.Source == e.OriginalSource);
                 DragDrop.DoDragDrop(this, this, DragDropEffects.Move);
             }
