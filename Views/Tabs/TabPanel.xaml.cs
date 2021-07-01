@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CrossEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -420,6 +421,25 @@ namespace General.WPF
             this.insertTabPanel(newTabControl, dropTarget, direction);
         }
 
+        private void groupGrid(Grid source, Grid target)
+        {
+            if (source.ColumnDefinitions.Count > 0)
+            {
+                foreach (ColumnDefinition definition in source.ColumnDefinitions)
+                {
+                    target.ColumnDefinitions.Add(definition);
+                }
+            }
+            else
+            {
+                Trace.Assert(source.RowDefinitions.Count > 0);
+                foreach (RowDefinition definition in source.RowDefinitions)
+                {
+                    target.RowDefinitions.Add(definition);
+                }
+            }
+        }
+
         protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
         {
             base.OnVisualChildrenChanged(visualAdded, visualRemoved);
@@ -428,6 +448,13 @@ namespace General.WPF
             {
                 this.Items.Remove(visualAdded as UIElement);
                 mTabControl.Items.Add(visualAdded);
+            }
+            else if (visualAdded is Grid)
+            {
+                //mPanelGrid.Children.Clear();
+                //mPanelGrid.RowDefinitions.Clear();
+                //mPanelGrid.ColumnDefinitions.Clear();
+                //this.groupGrid(visualAdded as Grid, mPanelGrid);
             }
         }
 
@@ -715,6 +742,7 @@ namespace General.WPF
             mPanelGrid.RowDefinitions.Clear();
             mPanelGrid.ColumnDefinitions.Clear();
             this.loadLayout(root, mPanelGrid);
+            mPanelGrid.Width = mPanelGrid.Height = double.NaN;
         }
     }
 }

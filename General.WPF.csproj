@@ -5,12 +5,23 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Dragablz" Version="0.0.3.223" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Runtime\Runtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Views\Renders\RenderView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\Tabs\TabItem.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
