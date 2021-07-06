@@ -169,6 +169,12 @@ namespace General.WPF
 
         private void onDragOver(object sender, DragEventArgs e)
         {
+            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (null == item)
+            {
+                return;
+            }
+
             Rect rect;
             int tabIndex;
             Dock direction;
@@ -189,6 +195,12 @@ namespace General.WPF
 
         private void onDrop(object sender, DragEventArgs e)
         {
+            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (null == item)
+            {
+                return;
+            }
+
             this.hideSlotMask();
 
             Rect rect;
@@ -199,7 +211,6 @@ namespace General.WPF
 
             if (tabIndex > -1)
             {
-                TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
                 Trace.Assert(null != item);
 
                 TabControl parent = item.Parent as TabControl;
