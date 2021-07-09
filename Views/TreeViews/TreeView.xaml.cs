@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace General.WPF
         public event OnItemHeaderChange onItemHeaderChange = null;
 
         private Style mItemStyle = null;
+        private TreeViewItem mEditingItem = null;
 
         public Brush InactiveSelectionBackground { get; set; } = new SolidColorBrush(Color.FromArgb(128, 144, 144, 144));
 
@@ -104,6 +106,18 @@ namespace General.WPF
         /// <param name="item">The TreeViewItem which want to edit</param>
         public void Edit(TreeViewItem item)
         {
+            if (null != mEditingItem)
+            {
+                this.Commit(mEditingItem);
+            }
+
+            if (this != item.GetTreeViewOwner())
+            {
+                return;
+            }
+
+            mEditingItem = item;
+
             TextBox inputBox = item.Template?.FindName("InputBox", item) as TextBox;
             if (null == inputBox)
             {
@@ -139,6 +153,8 @@ namespace General.WPF
         /// <param name="item">The TreeViewItem which want to commit</param>
         public void Commit(TreeViewItem item)
         {
+            Trace.Assert(mEditingItem == item);
+
             TextBox inputBox = item.Template?.FindName("InputBox", item) as TextBox;
             if (null == inputBox)
             {
