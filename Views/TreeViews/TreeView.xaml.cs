@@ -153,7 +153,7 @@ namespace General.WPF
         /// <param name="item">The TreeViewItem which want to commit</param>
         public void Commit(TreeViewItem item)
         {
-            Trace.Assert(mEditingItem == item);
+            //Trace.Assert(mEditingItem == item); // can occur when deleting item
 
             TextBox inputBox = item.Template?.FindName("InputBox", item) as TextBox;
             if (null == inputBox)
