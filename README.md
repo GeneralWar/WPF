@@ -24,3 +24,14 @@ A tab panel which can drag tab item out as a standard window, or drop tab item i
     <General:TabItem Content="I" Header="III"/>
 </General:TabPanel.Items>
 ```
+
+### [TreeView](./Views/TreeViews)
+
+一个可以编辑Item名的TreeView，可以通过以下方式触发编辑状态：
+- 连续点击2次Item (Click *Item* twice)
+- 通过TreeView.Edit触发 (Use *TreeView.Edit*)
+
+可以通过以下方式提交编辑：
+- 按下键盘Enter键 (Press *Enter*)
+- 使Item或者TextBox失去焦点 (Make *Item* or *TextBox* lost focus)
+- 通过TreeView.Commit提交 (Use TreeView.Commit)
