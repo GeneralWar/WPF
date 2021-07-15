@@ -1,19 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace General.WPF
 {
@@ -22,13 +16,21 @@ namespace General.WPF
     /// </summary>
     public partial class TreeView : System.Windows.Controls.TreeView
     {
+        static private readonly PropertyInfo IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
+
         public delegate void OnItemHeaderChange(TreeViewItem item);
         public event OnItemHeaderChange onItemHeaderChange = null;
+
+        public delegate void OnSelectedItemsChange(IList items);
+        public event OnSelectedItemsChange onSelectedItemsChange = null;
 
         private Style mItemStyle = null;
         private TreeViewItem mEditingItem = null;
 
         public Brush InactiveSelectionBackground { get; set; } = new SolidColorBrush(Color.FromArgb(128, 144, 144, 144));
+
+        private List<TreeViewItem> mSelectedItems = new List<TreeViewItem>();
+        public IList SelectedItems => mSelectedItems;
 
         public TreeView()
         {
@@ -93,11 +95,60 @@ namespace General.WPF
                 return;
             }
 
-            if (item.IsSelected && item.IsFocused)
+            if (item.IsSelected)
             {
-                e.Handled = true;
-                this.Edit(item);
+                if (mSelectedItems.Count > 1)
+                {
+                    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                    {
+                        item.IsSelected = false;
+                    }
+                    else
+                    {
+                        this.ClearSelectedItems();
+                        item.IsSelected = true;
+                    }
+                    e.Handled = true;
+                    return;
+                }
+                else if (1 == mSelectedItems.Count && item == mSelectedItems[0])
+                {
+                    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                    {
+                        this.ClearSelectedItems();
+                        e.Handled = true;
+                        return;
+                    }
+                }
+
+                if (item.IsFocused)
+                {
+                    e.Handled = true;
+                    this.Edit(item);
+                    return;
+                }
             }
+            //else if (MouseButton.Left == e.ChangedButton)
+            //{
+            //    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            //    {
+            //        if (item.IsSelected || mSelectedItems.Contains(item))
+            //        {
+            //            this.unselect(item);
+            //        }
+            //        else
+            //        {
+            //            this.select(item);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        this.clearSelectedItems();
+            //        item.IsSelected = true;
+            //        this.select(item);
+            //    }
+            //    e.Handled = true;
+            //}
         }
 
         /// <summary>
@@ -138,6 +189,13 @@ namespace General.WPF
                 return;
             }
 
+            //if (!item.IsSelected && sender is TreeViewItem && mSelectedItems.Contains(item))
+            //{
+            //    Border board = item.Template.FindName("TextBoard", item) as Border;
+            //    board.Background = this.InactiveSelectionBackground;
+            //    item.Foreground = SystemColors.InactiveSelectionHighlightTextBrush;
+            //}
+
             IInputElement hitControl = item.InputHitTest(InputManager.Current.PrimaryMouseDevice.GetPosition(item));
             if (null != hitControl)
             {
@@ -166,6 +224,91 @@ namespace General.WPF
 
             item.Header = inputBox.Text;
             this.onItemHeaderChange?.Invoke(item);
+        }
+
+        //private void select(TreeViewItem item)
+        //{
+        //    Border board = item.Template.FindName("TextBoard", item) as Border;
+        //    board.Background = SystemColors.HighlightBrush;
+        //    item.Foreground = SystemColors.HighlightTextBrush;
+        //    mSelectedItems.Add(item);
+        //}
+
+        //private void unselect(TreeViewItem item)
+        //{
+        //    Border board = item.Template.FindName("TextBoard", item) as Border;
+        //    board.Background = Brushes.Transparent;
+        //    item.Foreground = SystemColors.ControlTextBrush;
+        //    mSelectedItems.Remove(item);
+        //}
+
+        //private void clearSelectedItems()
+        //{
+        //    foreach (object i in mSelectedItems.ToArray())
+        //    {
+        //        TreeViewItem item = i as TreeViewItem;
+        //        if (null == item)
+        //        {
+        //            continue;
+        //        }
+        //        this.unselect(item);
+        //    }
+
+        //    mSelectedItems.Clear();
+        //}
+
+        protected override void OnSelectedItemChanged(RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (IsSelectionChangeActiveProperty == null)
+            {
+                return;
+            }
+
+            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+            {
+                object isSelectionChangeActive = IsSelectionChangeActiveProperty.GetValue(this, null);
+                IsSelectionChangeActiveProperty.SetValue(this, true, null);
+
+                if (e.NewValue is TreeViewItem)
+                {
+                    mSelectedItems.Add(e.NewValue as TreeViewItem);
+                    mSelectedItems.ForEach(item => item.IsSelected = true);
+                    this.reportSelectedItemsChange();
+                }
+                else if (null != e.OldValue && null == e.NewValue && e.OldValue is TreeViewItem)
+                {
+                    TreeViewItem item = e.OldValue as TreeViewItem;
+                    if (!item.IsSelected)
+                    {
+                        mSelectedItems.Remove(item);
+                        this.reportSelectedItemsChange();
+                    }
+                }
+
+                IsSelectionChangeActiveProperty.SetValue(this, isSelectionChangeActive, null);
+            }
+            else
+            {
+                this.ClearSelectedItems();
+                base.OnSelectedItemChanged(e);
+                if (e.NewValue is TreeViewItem)
+                {
+                    mSelectedItems.Add(e.NewValue as TreeViewItem);
+                }
+                this.reportSelectedItemsChange();
+            }
+        }
+
+        private void reportSelectedItemsChange()
+        {
+            this.onSelectedItemsChange?.Invoke(mSelectedItems);
+        }
+
+        public void ClearSelectedItems()
+        {
+            Array.ForEach(mSelectedItems.ToArray(), item => item.IsSelected = false);
+            mSelectedItems.Clear();
+            this.reportSelectedItemsChange();
         }
     }
 }
