@@ -18,285 +18,314 @@ namespace General.WPF
     {
         static private readonly PropertyInfo IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        public delegate void OnItemHeaderChange(TreeViewItem item);
-        public event OnItemHeaderChange onItemHeaderChange = null;
-
-        public delegate void OnSelectedItemsChange(IList items);
+        public delegate void OnSelectedItemsChange(IEnumerable<TreeViewItem> items);
         public event OnSelectedItemsChange onSelectedItemsChange = null;
-
-        private Style mItemStyle = null;
-        private TreeViewItem mEditingItem = null;
 
         public Brush InactiveSelectionBackground { get; set; } = new SolidColorBrush(Color.FromArgb(128, 144, 144, 144));
 
-        private List<TreeViewItem> mSelectedItems = new List<TreeViewItem>();
-        public IList SelectedItems => mSelectedItems;
+        private HashSet<TreeViewItem> mSelectedItems = new HashSet<TreeViewItem>();
+        public IEnumerable<TreeViewItem> SelectedItems => mSelectedItems;
+
+        private TreeViewItem mLastOperatedItem = null;
 
         public TreeView()
         {
             InitializeComponent();
-            mItemStyle = this.FindResource("TreeViewItemStyle") as Style;
+            IsSelectionChangeActiveProperty.SetValue(this, true);
         }
 
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
         {
             base.OnItemsChanged(e);
+            this.onItemsChange(this, e);
+        }
 
-            if (null == e.NewItems)
+        private void onItemsChange(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            base.OnItemsChanged(e);
+
+            if (NotifyCollectionChangedAction.Remove == e.Action)
+            {
+                if (null == e.OldItems)
+                {
+                    return;
+                }
+
+                int selectedCount = mSelectedItems.Count;
+                foreach (object i in e.OldItems)
+                {
+                    TreeViewItem item = i as TreeViewItem;
+                    if (null == item)
+                    {
+                        continue;
+                    }
+
+                    item.MouseDown -= this.onItemMouseDown;
+                    item.PreviewMouseDown -= this.onItemPreviewMouseDown;
+                    mSelectedItems.Remove(item);
+                }
+                if (mSelectedItems.Count != selectedCount)
+                {
+                    this.reportSelectedItemsChange();
+                }
+            }
+            else if (NotifyCollectionChangedAction.Add == e.Action)
+            {
+                if (null == e.NewItems)
+                {
+                    return;
+                }
+
+                foreach (object i in e.NewItems)
+                {
+                    TreeViewItem item = i as TreeViewItem;
+                    if (null == item)
+                    {
+                        continue;
+                    }
+
+                    item.MouseDown += this.onItemMouseDown;
+                    item.PreviewMouseDown += this.onItemPreviewMouseDown;
+                    item.onItemsChange += this.onItemsChange;
+                }
+            }
+        }
+
+        private void onItemMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Console.WriteLine(sender);
+        }
+
+        private TreeViewItem getTreeViewItem(FrameworkElement element)
+        {
+            FrameworkElement current = element;
+            while (null != current && current is not TreeViewItem)
+            {
+                current = current.TemplatedParent as FrameworkElement;
+            }
+            return current as TreeViewItem;
+        }
+
+        private void onItemPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (MouseButton.Left != e.ChangedButton && MouseButton.Right != e.ChangedButton)
             {
                 return;
             }
 
-            foreach (object i in e.NewItems)
+            TreeViewItem item = sender as TreeViewItem;
+            if (null == item)
             {
-                TreeViewItem item = i as TreeViewItem;
+                return;
+            }
+
+            IInputElement hit = item.InputHitTest(e.GetPosition(item));
+            item = this.getTreeViewItem(hit as FrameworkElement);
+            if (null == item || !item.IsHeaderArea(hit))
+            {
+                return;
+            }
+
+            e.Handled = true;
+
+            if (this.handleItemClick(item, e))
+            {
+                //this.reportSelectedItemsChange();
+            }
+        }
+
+        private bool handleItemClick(TreeViewItem item, MouseButtonEventArgs e)
+        {
+            if (null == item)
+            {
+                return false;
+            }
+
+            bool isControlPressed = Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl);
+            bool isShiftPressed = !isControlPressed && Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+            if (isControlPressed)
+            {
+                if (item.IsSelected)
+                {
+                    this.unselect(item);
+                    return true;
+                }
+                else
+                {
+                    this.append(item);
+                    return true;
+                }
+            }
+            else if (isShiftPressed)
+            {
+                if (mLastOperatedItem == item)
+                {
+                    return false;
+                }
+
+                this.selectItems(mLastOperatedItem, item);
+            }
+            else
+            {
+                if (item.IsSelected && 1 == mSelectedItems.Count)
+                {
+                    if (item.IsFocused)
+                    {
+                        item.Edit();
+                        return false;
+                    }
+                    //else
+                    //{
+                    //    object current = Mouse.PrimaryDevice.Captured;
+                    //    object focused = Keyboard.PrimaryDevice.FocusedElement;
+                    //    Console.WriteLine(current);
+                    //    Console.WriteLine(focused);
+                    //}
+                }
+                else
+                {
+                    if (MouseButton.Right == e.ChangedButton && item.IsSelected)
+                    {
+                        return false;
+                    }
+
+                    this.select(item);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private TreeViewItem[] getItemPath(TreeViewItem item)
+        {
+            if (null == item)
+            {
+                return new TreeViewItem[0];
+            }
+
+            TreeViewItem current = item;
+            List<TreeViewItem> path = new List<TreeViewItem>();
+            do
+            {
+                path.Insert(0, current);
+                current = current.Parent as TreeViewItem;
+            } while (null != current);
+            return path.ToArray();
+        }
+
+        private void selectItems(TreeViewItem from, TreeViewItem to)
+        {
+            if (from == to)
+            {
+                return;
+            }
+
+            TreeViewItem[] fromPath = this.getItemPath(from);
+            TreeViewItem[] toPath = this.getItemPath(to);
+
+            int forkDepth = 0;
+            ItemCollection forkCollection = this.Items;
+            int shallow = Math.Min(fromPath.Length, toPath.Length);
+            for (int i = 0; i < shallow; ++i, ++forkDepth)
+            {
+                if (fromPath[i] == toPath[i])
+                {
+                    forkCollection = fromPath[i].Items;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            int fromIndex = forkCollection.IndexOf(fromPath[forkDepth]);
+            int toIndex = forkCollection.IndexOf(toPath[forkDepth]);
+            int minIndex = Math.Min(fromIndex, toIndex);
+            int maxIndex = Math.Max(fromIndex, toIndex);
+            List<TreeViewItem> items = new List<TreeViewItem>();
+            for (int i = minIndex; i <= maxIndex; ++i)
+            {
+                TreeViewItem item = forkCollection[i] as TreeViewItem;
                 if (null == item)
                 {
                     continue;
                 }
-
-                item.Style = mItemStyle;
-                item.LostFocus += this.onItemInputLostFocus;
+                this.enumerateItems(item, items);
             }
+
+            fromIndex = items.IndexOf(from);
+            toIndex = items.IndexOf(to);
+            minIndex = Math.Min(fromIndex, toIndex);
+            maxIndex = Math.Max(fromIndex, toIndex);
+
+            this.append(items.Skip(minIndex).Take(maxIndex - minIndex + 1).ToArray(), to);
+            mLastOperatedItem = to;
         }
 
-        private void onInputBoxKeyDown(object sender, KeyEventArgs e)
+        private void enumerateItems(TreeViewItem root, List<TreeViewItem> items)
         {
-            if (Key.Enter != e.Key)
+            items.Add(root);
+            if (root.IsExpanded)
             {
-                return;
-            }
-
-            TextBox inputBox = sender as TextBox;
-            if (null == inputBox)
-            {
-                return;
-            }
-
-            TreeViewItem item = inputBox.Tag as TreeViewItem;
-            if (null == item)
-            {
-                return;
-            }
-
-            this.Commit(item);
-        }
-
-        private void onHeaderMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is not Grid)
-            {
-                return;
-            }
-
-            TreeViewItem item = (sender as Grid).Tag as TreeViewItem;
-            if (null == item)
-            {
-                return;
-            }
-
-            if (item.IsSelected)
-            {
-                if (mSelectedItems.Count > 1)
+                foreach (object i in root.Items)
                 {
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                    TreeViewItem item = i as TreeViewItem;
+                    if (null == item)
                     {
-                        item.IsSelected = false;
+                        continue;
                     }
-                    else
-                    {
-                        this.ClearSelectedItems();
-                        item.IsSelected = true;
-                    }
-                    e.Handled = true;
-                    return;
-                }
-                else if (1 == mSelectedItems.Count && item == mSelectedItems[0])
-                {
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                    {
-                        this.ClearSelectedItems();
-                        e.Handled = true;
-                        return;
-                    }
-                }
 
-                if (item.IsFocused)
-                {
-                    e.Handled = true;
-                    this.Edit(item);
-                    return;
+                    this.enumerateItems(item, items);
                 }
             }
-            //else if (MouseButton.Left == e.ChangedButton)
-            //{
-            //    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-            //    {
-            //        if (item.IsSelected || mSelectedItems.Contains(item))
-            //        {
-            //            this.unselect(item);
-            //        }
-            //        else
-            //        {
-            //            this.select(item);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        this.clearSelectedItems();
-            //        item.IsSelected = true;
-            //        this.select(item);
-            //    }
-            //    e.Handled = true;
-            //}
         }
 
-        /// <summary>
-        /// Convert specific TreeViewItem into edit mode
-        /// </summary>
-        /// <param name="item">The TreeViewItem which want to edit</param>
-        public void Edit(TreeViewItem item)
+        private void select(TreeViewItem item)
         {
-            if (null != mEditingItem)
-            {
-                this.Commit(mEditingItem);
-            }
-
-            if (this != item.GetTreeViewOwner())
-            {
-                return;
-            }
-
-            mEditingItem = item;
-
-            TextBox inputBox = item.Template?.FindName("InputBox", item) as TextBox;
-            if (null == inputBox)
-            {
-                return;
-            }
-
-            inputBox.LostFocus += onItemInputLostFocus;
-            inputBox.Visibility = Visibility.Visible;
-            inputBox.SelectAll();
-            inputBox.Focus();
+            this.clearSelectedItems();
+            item.IsSelected = true;
+            mSelectedItems.Add(mLastOperatedItem = item);
+            item.Focus();
+            this.reportSelectedItemsChange();
         }
 
-        private void onItemInputLostFocus(object sender, RoutedEventArgs e)
+        private void append(TreeViewItem item)
         {
-            TreeViewItem item = sender is TextBox ? (sender as TextBox).Tag as TreeViewItem : sender as TreeViewItem;
-            if (null == item)
-            {
-                return;
-            }
-
-            //if (!item.IsSelected && sender is TreeViewItem && mSelectedItems.Contains(item))
-            //{
-            //    Border board = item.Template.FindName("TextBoard", item) as Border;
-            //    board.Background = this.InactiveSelectionBackground;
-            //    item.Foreground = SystemColors.InactiveSelectionHighlightTextBrush;
-            //}
-
-            IInputElement hitControl = item.InputHitTest(InputManager.Current.PrimaryMouseDevice.GetPosition(item));
-            if (null != hitControl)
-            {
-                return;
-            }
-
-            this.Commit(item);
+            item.IsSelected = true;
+            mSelectedItems.Add(mLastOperatedItem = item);
+            item.Focus();
+            this.reportSelectedItemsChange();
         }
 
-        /// <summary>
-        /// Commit the text in TextBox as the item's header
-        /// </summary>
-        /// <param name="item">The TreeViewItem which want to commit</param>
-        public void Commit(TreeViewItem item)
+        private void append(TreeViewItem[] items, TreeViewItem last = null)
         {
-            //Trace.Assert(mEditingItem == item); // can occur when deleting item
-
-            TextBox inputBox = item.Template?.FindName("InputBox", item) as TextBox;
-            if (null == inputBox)
+            if (null == items || 0 == items.Length)
             {
                 return;
             }
 
-            inputBox.LostFocus -= onItemInputLostFocus;
-            inputBox.Visibility = Visibility.Hidden;
+            foreach (TreeViewItem item in items)
+            {
+                item.IsSelected = true;
+                mSelectedItems.Add(mLastOperatedItem = item);
+            }
 
-            item.Header = inputBox.Text;
-            this.onItemHeaderChange?.Invoke(item);
+            if (null != last)
+            {
+                mLastOperatedItem = last;
+            }
+
+            mLastOperatedItem.Focus();
+            this.reportSelectedItemsChange();
         }
 
-        //private void select(TreeViewItem item)
-        //{
-        //    Border board = item.Template.FindName("TextBoard", item) as Border;
-        //    board.Background = SystemColors.HighlightBrush;
-        //    item.Foreground = SystemColors.HighlightTextBrush;
-        //    mSelectedItems.Add(item);
-        //}
-
-        //private void unselect(TreeViewItem item)
-        //{
-        //    Border board = item.Template.FindName("TextBoard", item) as Border;
-        //    board.Background = Brushes.Transparent;
-        //    item.Foreground = SystemColors.ControlTextBrush;
-        //    mSelectedItems.Remove(item);
-        //}
-
-        //private void clearSelectedItems()
-        //{
-        //    foreach (object i in mSelectedItems.ToArray())
-        //    {
-        //        TreeViewItem item = i as TreeViewItem;
-        //        if (null == item)
-        //        {
-        //            continue;
-        //        }
-        //        this.unselect(item);
-        //    }
-
-        //    mSelectedItems.Clear();
-        //}
-
-        protected override void OnSelectedItemChanged(RoutedPropertyChangedEventArgs<object> e)
+        private void unselect(TreeViewItem item)
         {
-            if (IsSelectionChangeActiveProperty == null)
-            {
-                return;
-            }
-
-            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-            {
-                object isSelectionChangeActive = IsSelectionChangeActiveProperty.GetValue(this, null);
-                IsSelectionChangeActiveProperty.SetValue(this, true, null);
-
-                if (e.NewValue is TreeViewItem)
-                {
-                    mSelectedItems.Add(e.NewValue as TreeViewItem);
-                    mSelectedItems.ForEach(item => item.IsSelected = true);
-                    this.reportSelectedItemsChange();
-                }
-                else if (null != e.OldValue && null == e.NewValue && e.OldValue is TreeViewItem)
-                {
-                    TreeViewItem item = e.OldValue as TreeViewItem;
-                    if (!item.IsSelected)
-                    {
-                        mSelectedItems.Remove(item);
-                        this.reportSelectedItemsChange();
-                    }
-                }
-
-                IsSelectionChangeActiveProperty.SetValue(this, isSelectionChangeActive, null);
-            }
-            else
-            {
-                this.ClearSelectedItems();
-                base.OnSelectedItemChanged(e);
-                if (e.NewValue is TreeViewItem)
-                {
-                    mSelectedItems.Add(e.NewValue as TreeViewItem);
-                }
-                this.reportSelectedItemsChange();
-            }
+            item.IsSelected = false;
+            mLastOperatedItem = item;
+            mSelectedItems.Remove(item);
+            this.reportSelectedItemsChange();
         }
 
         private void reportSelectedItemsChange()
@@ -304,10 +333,16 @@ namespace General.WPF
             this.onSelectedItemsChange?.Invoke(mSelectedItems);
         }
 
-        public void ClearSelectedItems()
+        private void clearSelectedItems()
         {
             Array.ForEach(mSelectedItems.ToArray(), item => item.IsSelected = false);
             mSelectedItems.Clear();
+            mLastOperatedItem = null;
+        }
+
+        public void ClearSelectedItems()
+        {
+            this.clearSelectedItems();
             this.reportSelectedItemsChange();
         }
     }
