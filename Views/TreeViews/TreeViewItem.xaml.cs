@@ -49,6 +49,31 @@ namespace General.WPF
             return element is TextBlock || element == mTextBoard || element == mInputBoard;
         }
 
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+            this.onMouseDown(e);
+        }
+
+        protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseDown(e);
+            this.onMouseDown(e);
+        }
+
+        private void onMouseDown(MouseButtonEventArgs e)
+        {
+            if (this.IsSelected && MouseButton.Left == e.ChangedButton)
+            {
+                TreeView root = this.GetTreeViewOwner();
+                if (1 == root.SelectedItems.Count() && this == root.SelectedItems.ElementAt(0))
+                {
+                    this.Edit();
+                    e.Handled = true;
+                }
+            }
+        }
+
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)
         {
             if (Key.Enter != e.Key)

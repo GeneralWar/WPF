@@ -167,31 +167,17 @@ namespace General.WPF
             }
             else
             {
-                if (item.IsSelected && 1 == mSelectedItems.Count)
+                if (MouseButton.Right == e.ChangedButton && mSelectedItems.Contains(item))
                 {
-                    if (item.IsFocused)
-                    {
-                        item.Edit();
-                        return false;
-                    }
-                    //else
-                    //{
-                    //    object current = Mouse.PrimaryDevice.Captured;
-                    //    object focused = Keyboard.PrimaryDevice.FocusedElement;
-                    //    Console.WriteLine(current);
-                    //    Console.WriteLine(focused);
-                    //}
+                    return false;
                 }
-                else
+                if (item.IsSelected && 1 == mSelectedItems.Count && mSelectedItems.Contains(item))
                 {
-                    if (MouseButton.Right == e.ChangedButton && item.IsSelected)
-                    {
-                        return false;
-                    }
+                    return false;
+                }
 
-                    this.select(item);
-                    return true;
-                }
+                this.select(item);
+                return true;
             }
 
             return false;
