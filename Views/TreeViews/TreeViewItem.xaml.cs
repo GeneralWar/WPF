@@ -63,7 +63,7 @@ namespace General.WPF
 
         private void onMouseDown(MouseButtonEventArgs e)
         {
-            if (this.IsSelected && MouseButton.Left == e.ChangedButton)
+            if (this.IsSelected && MouseButton.Left == e.ChangedButton && this.IsHeaderArea(this.InputHitTest(e.GetPosition(this))))
             {
                 TreeView root = this.GetTreeViewOwner();
                 if (1 == root.SelectedItems.Count() && this == root.SelectedItems.ElementAt(0))
