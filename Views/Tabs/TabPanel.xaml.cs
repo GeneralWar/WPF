@@ -691,7 +691,9 @@ namespace General.WPF
 
                 string assemblyName = child.GetAttribute(ATTRIBUTE_CONTENT_ASSEMBLY);
                 Assembly assembly = Assembly.Load(assemblyName);
-                Type contentType = assembly.GetType(child.GetAttribute(ATTRIBUTE_CONTENT_TYPE));
+                string contentTypeName = child.GetAttribute(ATTRIBUTE_CONTENT_TYPE);
+                Type contentType = assembly.GetType(contentTypeName);
+                Trace.Assert(null != contentType);
                 if (typeof(string) == contentType)
                 {
                     item.Content = child.GetAttribute(ATTRIBUTE_CONTENT_STRING);
