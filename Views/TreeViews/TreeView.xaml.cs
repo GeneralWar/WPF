@@ -63,6 +63,10 @@ namespace General.WPF
                     item.MouseDown -= this.onItemMouseDown;
                     item.PreviewMouseDown -= this.onItemPreviewMouseDown;
                     mSelectedItems.Remove(item);
+                    if (item == mLastOperatedItem)
+                    {
+                        mLastOperatedItem = null;
+                    }
                 }
                 if (mSelectedItems.Count != selectedCount)
                 {

@@ -115,7 +115,7 @@
                                     <Condition Property="IsSelected" Value="true"/>
                                     <Condition Property="IsSelectionActive" Value="false"/>
                                 </MultiTrigger.Conditions>
-                                <Setter Property="Background" TargetName="TextBoard" Value="{Binding InactiveSelectionBackground, RelativeSource={RelativeSource AncestorType={x:Type local:TreeView}}}"/>
+                                <Setter Property="Background" TargetName="TextBoard" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}"/>
                             </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="false">
