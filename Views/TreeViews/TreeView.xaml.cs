@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace General.WPF
     /// <summary>
     /// TreeView.xaml 的交互逻辑
     /// </summary>
-    public partial class TreeView : System.Windows.Controls.TreeView
+    public partial class TreeView : System.Windows.Controls.TreeView, ITreeViewItemCollection
     {
         static private readonly PropertyInfo IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
 
