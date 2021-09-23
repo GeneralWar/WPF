@@ -9,6 +9,12 @@ namespace General.WPF
         {
             base.OnPreviewMouseMove(e);
 
+            TabPanel parent = this.GetTabPanelUpward();
+            if (!parent.DragEnabled)
+            {
+                return;
+            }
+
             if (MouseButtonState.Pressed == e.LeftButton)
             {
                 IInputElement input = this.InputHitTest(e.GetPosition(this));

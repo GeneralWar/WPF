@@ -28,11 +28,18 @@ namespace General.WPF
 
         private HashSet<TabControl> mTabControls = new HashSet<TabControl>();
 
+        public bool DragEnabled { get; private set; } = true;
+
         public TabPanel()
         {
             InitializeComponent();
             this.Items = new UIElementCollection(this, this);
             this.addTabControl(mTabControl);
+        }
+
+        public void SetDragEnable(bool enabled)
+        {
+            this.DragEnabled = enabled;
         }
 
         private void addTabControl(TabControl control)

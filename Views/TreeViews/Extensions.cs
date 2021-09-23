@@ -2,7 +2,7 @@
 
 namespace General.WPF
 {
-    static public class Extensions
+    static public partial class Extensions
     {
         static public TreeViewItem GetTreeViewItemUpward(this IInputElement element)
         {
