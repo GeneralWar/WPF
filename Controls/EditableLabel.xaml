@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:General.WPF"
              mc:Ignorable="d" 
-             d:DesignHeight="32" d:DesignWidth="128">
+             d:DesignHeight="32" d:DesignWidth="128" Focusable="True">
     <UserControl.Resources>
         <SolidColorBrush x:Key="ListBorder" Color="#828790"/>
         <Style x:Key="EditableLabel" TargetType="{x:Type UserControl}">

@@ -10,10 +10,11 @@ namespace General.WPF
     /// </summary>
     public partial class EditableLabel : UserControl
     {
+        static public readonly DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string), typeof(EditableLabel));
         static public readonly DependencyProperty IsEditingProperty = DependencyProperty.Register("IsEditing", typeof(bool), typeof(EditableLabel));
         static public readonly DependencyProperty IsSelectedProperty = DependencyProperty.Register("IsSelected", typeof(bool), typeof(EditableLabel));
 
-        public string Text { get; set; }
+        public string Text { get { return GetValue(TextProperty) as string; } set { SetValue(TextProperty, value); } }
 
         public bool IsEditing { get { return (bool)GetValue(IsEditingProperty); } set { SetValue(IsEditingProperty, value); } }
         public bool IsSelected { get { return (bool)GetValue(IsSelectedProperty); } set { SetValue(IsSelectedProperty, value); } }
@@ -44,6 +45,7 @@ namespace General.WPF
             if (MouseButton.Left == e.ChangedButton && this.IsSelected)
             {
                 this.IsEditing = true;
+                e.Handled = true;
             }
         }
 
@@ -55,27 +57,35 @@ namespace General.WPF
             {
                 if (e.NewValue is bool)
                 {
+                    TextBox input = this.Template.FindName("InputBox", this) as TextBox;
+                    if (input is null)
+                    {
+                        return;
+                    }
+
                     bool isEditing = (bool)e.NewValue;
                     if (isEditing)
                     {
-                        object input = this.Template.FindName("InputBox", this);
-                        (input as TextBox)?.SelectAll();
-                        (input as TextBox)?.Focus();
+                        input.SelectAll();
+                        input.Focus();
                     }
                     else
                     {
                         if (mIsEditCanceled)
                         {
+                            input.Text = this.Text;
                             this.onEditCancel?.Invoke(this);
                         }
                         else
                         {
+                            this.Text = input.Text;
                             this.onEditFinish?.Invoke(this);
                         }
                         mIsEditCanceled = false;
                     }
                 }
             }
+
             if (e.Property == IsSelectedProperty && e.NewValue is bool && !(bool)e.NewValue)
             {
                 this.IsEditing = false;
