@@ -11,9 +11,13 @@ namespace General.WPF
 {
     public class RenderHostWindow : HwndHost
     {
+        public delegate void OnWindowCreate(IntPtr handle);
+        public event OnWindowCreate onWindowCreate = null;
+
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
             IntPtr handle = CreateWindowEx(0, "static", "RenderView", WS_CHILD | WS_VISIBLE, 0, 0, 800, 600, hwndParent.Handle, IntPtr.Zero, Process.GetCurrentProcess().Handle, IntPtr.Zero);
+            this.onWindowCreate?.Invoke(handle);
             return new HandleRef(this, handle);
         }
 
