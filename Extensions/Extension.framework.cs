@@ -21,6 +21,11 @@ namespace General.WPF
             return item as Window;
         }
 
+        private static FrameworkElement? GetRealParent(this FrameworkElement element)
+        {
+            return element.Parent as FrameworkElement ?? element.TemplatedParent as FrameworkElement;
+        }
+
         public static bool IsChildOf(this FrameworkElement element, FrameworkElement testParent, bool includeSelf = false)
         {
             if (element == testParent)
@@ -28,16 +33,9 @@ namespace General.WPF
                 return includeSelf;
             }
 
-            FrameworkElement parent = element;
-            while (parent != element && parent.Parent is not null)
-            {
-                parent = parent.Parent as FrameworkElement;
-            }
-            while (parent != element && parent.TemplatedParent is not null)
-            {
-                parent = parent.TemplatedParent as FrameworkElement;
-            }
-            return parent == element;
+            FrameworkElement? parent = element;
+            while (parent is not null && (parent = parent.GetRealParent()) != testParent) ;
+            return parent == testParent;
         }
 
         static public T GetElementUpward<T>(this IInputElement element) where T : FrameworkElement
