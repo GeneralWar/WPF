@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -49,6 +48,28 @@ namespace General.WPF
             }
         }
 
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+
+            if (this.IsEditing)
+            {
+                this.beginEditing();
+            }
+        }
+
+        private void beginEditing()
+        {
+            TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
+            if (input is null)
+            {
+                return;
+            }
+
+            input.SelectAll();
+            input.Focus();
+        }
+
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
         {
             base.OnPropertyChanged(e);
@@ -57,20 +78,20 @@ namespace General.WPF
             {
                 if (e.NewValue is bool)
                 {
-                    TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
-                    if (input is null)
-                    {
-                        return;
-                    }
-
                     bool isEditing = (bool)e.NewValue;
                     if (isEditing)
                     {
-                        input.SelectAll();
-                        input.Focus();
+                        this.beginEditing();
                     }
                     else
                     {
+                        var finder = this.Template.FindName("InputBox", this);
+                        TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
+                        if (input is null)
+                        {
+                            return;
+                        }
+
                         if (mIsEditCanceled)
                         {
                             input.Text = this.Text;
