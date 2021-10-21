@@ -9,8 +9,8 @@ namespace General.WPF
         {
             base.OnPreviewMouseMove(e);
 
-            TabPanel parent = this.GetElementUpward<TabPanel>();
-            if (!parent.DragEnabled)
+            TabPanel? parent = this.GetElementUpward<TabPanel>();
+            if (parent is null || !parent.DragEnabled)
             {
                 return;
             }

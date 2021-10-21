@@ -15,22 +15,22 @@ namespace General.WPF
     /// </summary>
     public partial class TreeView : System.Windows.Controls.TreeView, ITreeViewItemCollection
     {
-        static private readonly PropertyInfo IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
+        static private readonly PropertyInfo? IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
 
         public delegate void OnSelectedItemsChange(IEnumerable<TreeViewItem> items);
-        public event OnSelectedItemsChange onSelectedItemsChange = null;
+        public event OnSelectedItemsChange? onSelectedItemsChange = null;
 
         public Brush InactiveSelectionBackground { get; set; } = new SolidColorBrush(Color.FromArgb(128, 144, 144, 144));
 
         private HashSet<TreeViewItem> mSelectedItems = new HashSet<TreeViewItem>();
         public IEnumerable<TreeViewItem> SelectedItems => mSelectedItems;
 
-        private TreeViewItem mLastOperatedItem = null;
+        private TreeViewItem? mLastOperatedItem = null;
 
         public TreeView()
         {
             InitializeComponent();
-            IsSelectionChangeActiveProperty.SetValue(this, true);
+            IsSelectionChangeActiveProperty?.SetValue(this, true);
         }
 
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
@@ -53,8 +53,8 @@ namespace General.WPF
                 int selectedCount = mSelectedItems.Count;
                 foreach (object i in e.OldItems)
                 {
-                    TreeViewItem item = i as TreeViewItem;
-                    if (null == item)
+                    TreeViewItem? item = i as TreeViewItem;
+                    if (item is null)
                     {
                         continue;
                     }
@@ -81,8 +81,8 @@ namespace General.WPF
 
                 foreach (object i in e.NewItems)
                 {
-                    TreeViewItem item = i as TreeViewItem;
-                    if (null == item)
+                    TreeViewItem? item = i as TreeViewItem;
+                    if (item is null)
                     {
                         continue;
                     }
@@ -99,10 +99,10 @@ namespace General.WPF
             Console.WriteLine(sender);
         }
 
-        private TreeViewItem getTreeViewItem(FrameworkElement element)
+        private TreeViewItem? getTreeViewItem(FrameworkElement? element)
         {
-            FrameworkElement current = element;
-            while (null != current && current is not TreeViewItem)
+            FrameworkElement? current = element;
+            while (current is not null && current is not TreeViewItem)
             {
                 current = current.TemplatedParent as FrameworkElement;
             }
@@ -116,8 +116,8 @@ namespace General.WPF
                 return;
             }
 
-            TreeViewItem item = sender as TreeViewItem;
-            if (null == item)
+            TreeViewItem? item = sender as TreeViewItem;
+            if (item is null)
             {
                 return;
             }
@@ -166,7 +166,10 @@ namespace General.WPF
                     return false;
                 }
 
-                this.selectItems(mLastOperatedItem, item);
+                if (mLastOperatedItem is not null)
+                {
+                    this.selectItems(mLastOperatedItem, item);
+                }
             }
             else
             {
@@ -193,7 +196,7 @@ namespace General.WPF
                 return new TreeViewItem[0];
             }
 
-            TreeViewItem current = item;
+            TreeViewItem? current = item;
             List<TreeViewItem> path = new List<TreeViewItem>();
             do
             {
@@ -235,8 +238,8 @@ namespace General.WPF
             List<TreeViewItem> items = new List<TreeViewItem>();
             for (int i = minIndex; i <= maxIndex; ++i)
             {
-                TreeViewItem item = forkCollection[i] as TreeViewItem;
-                if (null == item)
+                TreeViewItem? item = forkCollection[i] as TreeViewItem;
+                if (item is null)
                 {
                     continue;
                 }
@@ -259,8 +262,8 @@ namespace General.WPF
             {
                 foreach (object i in root.Items)
                 {
-                    TreeViewItem item = i as TreeViewItem;
-                    if (null == item)
+                    TreeViewItem? item = i as TreeViewItem;
+                    if (item is null)
                     {
                         continue;
                     }
@@ -287,7 +290,7 @@ namespace General.WPF
             this.reportSelectedItemsChange();
         }
 
-        private void append(TreeViewItem[] items, TreeViewItem last = null)
+        private void append(TreeViewItem[] items, TreeViewItem? last = null)
         {
             if (null == items || 0 == items.Length)
             {
@@ -305,7 +308,7 @@ namespace General.WPF
                 mLastOperatedItem = last;
             }
 
-            mLastOperatedItem.Focus();
+            mLastOperatedItem?.Focus();
             this.reportSelectedItemsChange();
         }
 

@@ -20,11 +20,11 @@ namespace General.WPF
         public const double GRID_SPLITTER_WEIGHT = 2;
         public const double TAB_MASK_WIDTH = 6;
 
-        static public readonly DependencyProperty ItemsProperty = DependencyProperty.Register("ItemsProperty", typeof(UIElementCollection), typeof(TabPanel), new PropertyMetadata(null));
+        static public readonly DependencyProperty ItemsProperty = DependencyProperty.Register("Items", typeof(UIElementCollection), typeof(TabPanel), new PropertyMetadata(null));
         /// <summary>
         /// Gets or sets items for the TabPanel
         /// </summary>
-        public UIElementCollection Items { get { return GetValue(ItemsProperty) as UIElementCollection; } set { SetValue(ItemsProperty, value); } }
+        public UIElementCollection Items { get { return GetValue(ItemsProperty) as UIElementCollection ?? throw new InvalidCastException(); } set { SetValue(ItemsProperty, value); } }
 
         private HashSet<TabControl> mTabControls = new HashSet<TabControl>();
 
@@ -52,17 +52,22 @@ namespace General.WPF
             control.onItemsChanged += onTabControlItemsChanged;
         }
 
-        private void checkDragPosition(TabControl control, DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction, out int tabIndex)
+        private void checkDragPosition(TabControl? control, DragEventArgs e, out double x, out double y, out double offsetX, out double offsetY, out Rect rect, out Dock direction, out int tabIndex)
         {
-            Trace.Assert(control.Items.Count > 0);
+            Trace.Assert(control is not null && control.Items.Count > 0);
 
             Point position = e.GetPosition(control);
-            x = position.X / control.ActualWidth;
-            y = position.Y / control.ActualHeight;
+            x = position.X / control?.ActualWidth ?? 1;
+            y = position.Y / control?.ActualHeight ?? 1;
             offsetX = Math.Min(x, 1.0 - x);
             offsetY = Math.Min(y, 1.0 - y);
             direction = (Dock)(-1);
             tabIndex = -1;
+
+            if (control is null)
+            {
+                return;
+            }
 
             if (offsetX > .25 && offsetY > .25)
             {
@@ -83,7 +88,7 @@ namespace General.WPF
             Trace.Assert(itemCount > 0);
             for (int i = 0; i < itemCount; ++i)
             {
-                FrameworkElement item = control.Items[i] as FrameworkElement;
+                FrameworkElement? item = control.Items[i] as FrameworkElement;
                 if (null == item)
                 {
                     continue;
@@ -101,8 +106,8 @@ namespace General.WPF
                 goto OFFSET;
             }
 
-            FrameworkElement lastTab = control.Items[itemCount - 1] as FrameworkElement;
-            if (position.Y < lastTab.ActualHeight)
+            FrameworkElement? lastTab = control.Items[itemCount - 1] as FrameworkElement;
+            if (lastTab is not null && position.Y < lastTab.ActualHeight)
             {
                 Point start = control.PointFromScreen(lastTab.PointToScreen(new Point(lastTab.ActualWidth, 0)));
                 rect = new Rect(start.X, start.Y, TAB_MASK_WIDTH, lastTab.ActualHeight);
@@ -166,8 +171,8 @@ namespace General.WPF
 
         private void onDragOver(object sender, DragEventArgs e)
         {
-            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
-            if (null == item)
+            TabItem? item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (item is null)
             {
                 return;
             }
@@ -192,8 +197,8 @@ namespace General.WPF
 
         private void onDrop(object sender, DragEventArgs e)
         {
-            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
-            if (null == item)
+            TabItem? item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (item is null)
             {
                 return;
             }
@@ -208,28 +213,26 @@ namespace General.WPF
 
             if (tabIndex > -1)
             {
-                Trace.Assert(null != item);
+                TabControl? parent = item.Parent as TabControl;
+                Trace.Assert(parent is not null);
 
-                TabControl parent = item.Parent as TabControl;
-                Trace.Assert(null != parent);
-
-                int index = parent.Items.IndexOf(item);
+                int index = parent?.Items.IndexOf(item) ?? -1;
                 Trace.Assert(index > -1);
 
-                TabControl control = sender as TabControl;
+                TabControl? control = sender as TabControl;
                 if (control == parent && (tabIndex == index || tabIndex - 1 == index))
                 {
                     return;
                 }
 
-                parent.Items.RemoveAt(index);
-                if (tabIndex < control.Items.Count)
+                parent?.Items.RemoveAt(index);
+                if (tabIndex < control?.Items.Count)
                 {
-                    control.Items.Insert(tabIndex, item);
+                    control?.Items.Insert(tabIndex, item);
                 }
                 else
                 {
-                    control.Items.Add(item);
+                    control?.Items.Add(item);
                 }
                 return;
             }
@@ -245,14 +248,19 @@ namespace General.WPF
 
         private void createNewWindow(DragEventArgs e)
         {
-            TabItem item = e.Data.GetData(typeof(TabItem)) as TabItem;
-            if (null == item)
+            TabItem? item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (item is null)
             {
-                return;
+                throw new InvalidCastException();
             }
 
-            TabControl collection = item.Parent as TabControl;
+            TabControl? collection = item.Parent as TabControl;
             //Trace.Assert(this == parent);
+            if (collection is null)
+            {
+                throw new InvalidCastException();
+            }
+
             collection.Items.Remove(item);
 
             Window window = new Window();
@@ -318,8 +326,12 @@ namespace General.WPF
 
         private Grid replaceTabControlWithGrid(TabControl control)
         {
-            Grid parent = control.Parent as Grid;
+            Grid? parent = control.Parent as Grid;
             Trace.Assert(null != parent);
+            if (parent is null)
+            {
+                throw new Exception();
+            }
 
             int row = Grid.GetRow(control);
             int column = Grid.GetColumn(control);
@@ -355,15 +367,20 @@ namespace General.WPF
 
         private void insertTabPanel(TabControl control, TabControl reference, Dock direction)
         {
-            Grid grid = reference.Parent as Grid;
+            Grid? grid = reference.Parent as Grid;
             Trace.Assert(null != grid);
+            if (grid is null)
+            {
+                return;
+            }
 
             List<FrameworkElement> controls = new List<FrameworkElement>();
-            foreach (UIElement element in grid.Children)
+            foreach (UIElement e in grid.Children)
             {
-                if (element is not GridSplitter)
+                FrameworkElement? element = e as FrameworkElement;
+                if (element is not null && element is not GridSplitter)
                 {
-                    controls.Add(element as FrameworkElement);
+                    controls.Add(element);
                 }
             }
 
@@ -404,10 +421,15 @@ namespace General.WPF
             }
         }
 
-        private void seperate(TabControl dropTarget, DragEventArgs e, Dock direction)
+        private void seperate(TabControl? dropTarget, DragEventArgs e, Dock direction)
         {
-            TabItem dropItem = e.Data.GetData(typeof(TabItem)) as TabItem;
-            if (null == dropItem)
+            if (dropTarget is null)
+            {
+                return;
+            }
+
+            TabItem? dropItem = e.Data.GetData(typeof(TabItem)) as TabItem;
+            if (dropItem is null)
             {
                 return;
             }
@@ -417,16 +439,18 @@ namespace General.WPF
                 return;
             }
 
-            TabControl oldTabControl = dropItem.Parent as TabControl;
-            Trace.Assert(null != oldTabControl);
-            Trace.Assert(null != dropTarget);
-            oldTabControl.Items.Remove(dropItem);
+            TabControl? oldTabControl = dropItem.Parent as TabControl;
+            Trace.Assert(oldTabControl is not null && dropTarget is not null);
+            oldTabControl?.Items.Remove(dropItem);
 
             TabControl newTabControl = new TabControl();
             newTabControl.Items.Add(dropItem);
             this.addTabControl(newTabControl);
 
-            this.insertTabPanel(newTabControl, dropTarget, direction);
+            if (dropTarget is not null)
+            {
+                this.insertTabPanel(newTabControl, dropTarget, direction);
+            }
         }
 
         private void groupGrid(Grid source, Grid target)
@@ -480,19 +504,23 @@ namespace General.WPF
 
         private void removeFromParent(FrameworkElement control)
         {
-            Grid parent = control.Parent as Grid;
+            Grid? parent = control.Parent as Grid;
             Trace.Assert(null != parent);
+            if (parent is null)
+            {
+                return;
+            }
 
             List<FrameworkElement> controls = new List<FrameworkElement>();
             foreach (UIElement element in parent.Children)
             {
-                TabControl tab = element as TabControl;
+                TabControl? tab = element as TabControl;
                 if (tab?.Items.Count > 0)
                 {
                     controls.Add(tab);
                     continue;
                 }
-                Grid panel = element as Grid;
+                Grid? panel = element as Grid;
                 if (panel?.Children.Count > 0)
                 {
                     controls.Add(panel);
@@ -532,15 +560,15 @@ namespace General.WPF
         {
             if (NotifyCollectionChangedAction.Remove == e.Action && 0 == control.Items.Count)
             {
-                Grid grid = control.Parent as Grid;
+                Grid? grid = control.Parent as Grid;
                 Trace.Assert(null != grid);
                 this.removeTabControl(control);
-                if (grid.Children.Count > 0)
+                if (grid?.Children.Count > 0)
                 {
                     return;
                 }
 
-                Window window = grid.GetTopWindow();
+                Window? window = grid?.GetTopWindow();
                 if (window?.GetType() == typeof(Window))
                 {
                     window.Close();
@@ -563,8 +591,13 @@ namespace General.WPF
         private const string NAME_ITEM = "Item";
         private const string NAME_TAB = "Tab";
 
-        private void saveLayout(XmlElement element, FrameworkElement item)
+        private void saveLayout(XmlElement element, FrameworkElement? item)
         {
+            if (item is null)
+            {
+                return;
+            }
+
             element.SetAttribute(ATTRIBUTE_NAME, item.Name);
             element.SetAttribute(ATTRIBUTE_SIZE, $"{(int)Math.Round(item.ActualWidth)},{(int)Math.Round(item.ActualHeight)}");
 
@@ -582,9 +615,9 @@ namespace General.WPF
                 this.saveLayout(e, child as FrameworkElement);
                 if (child is TabItem)
                 {
-                    TabItem item = child as TabItem;
-                    e.SetAttribute(ATTRIBUTE_HEADER, item.Header.ToString());
-                    if (null != item.Content)
+                    TabItem? item = child as TabItem;
+                    e.SetAttribute(ATTRIBUTE_HEADER, item?.Header.ToString());
+                    if (null != item?.Content)
                     {
                         e.SetAttribute(ATTRIBUTE_CONTENT_STRING, item.Content.ToString());
 
@@ -610,16 +643,27 @@ namespace General.WPF
 
                 Trace.Assert(child is FrameworkElement);
 
-                XmlElement e;
-                if (child is Grid)
+                XmlElement? e = null;
+                Grid? childGrid = child as Grid;
+                if (childGrid is not null)
                 {
-                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_GRID), child as Grid);
+                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_GRID), childGrid);
                 }
                 else
                 {
                     Trace.Assert(child is TabControl);
-                    this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_TAB), child as TabControl);
+                    TabControl? childTab = child as TabControl;
+                    if (childTab is not null)
+                    {
+                        this.saveLayout(e = element.OwnerDocument.CreateElement(NAME_TAB), childTab);
+                    }
                 }
+
+                if (e is null)
+                {
+                    return;
+                }
+
                 element.AppendChild(e);
             }
         }
@@ -642,7 +686,7 @@ namespace General.WPF
             }
         }
 
-        private FrameworkElement loadLayout(XmlElement element, FrameworkElement item = null)
+        private FrameworkElement? loadLayout(XmlElement element, FrameworkElement? item = null)
         {
             if (element.HasAttribute(ATTRIBUTE_ASSEMBLY) && element.HasAttribute(ATTRIBUTE_TYPE))
             {
@@ -651,11 +695,20 @@ namespace General.WPF
                 {
                     string assemblyName = element.GetAttribute(ATTRIBUTE_ASSEMBLY);
                     Assembly assembly = Assembly.Load(assemblyName);
-                    Type type = assembly.GetType(typename);
-                    item = Activator.CreateInstance(type) as FrameworkElement;
+                    Type? type = assembly.GetType(typename);
+                    if (type is not null)
+                    {
+                        item = Activator.CreateInstance(type) as FrameworkElement;
+                    }
                 }
-                Trace.Assert(item.GetType().FullName == typename);
+                Trace.Assert(item?.GetType().FullName == typename);
             }
+
+            if (item is null)
+            {
+                return null;
+            }
+
             if (element.HasAttribute(ATTRIBUTE_NAME))
             {
                 item.Name = element.GetAttribute(ATTRIBUTE_NAME);
@@ -681,21 +734,25 @@ namespace General.WPF
             this.saveLayout(element, control as FrameworkElement);
             foreach (XmlElement child in element.ChildNodes)
             {
-                TabItem item = this.loadLayout(child) as TabItem;
+                TabItem? item = this.loadLayout(child) as TabItem;
                 Trace.Assert(null != item);
+                if (item is null)
+                {
+                    continue;
+                }
 
                 item.Header = child.GetAttribute(ATTRIBUTE_HEADER);
 
                 string assemblyName = child.GetAttribute(ATTRIBUTE_CONTENT_ASSEMBLY);
                 Assembly assembly = Assembly.Load(assemblyName);
                 string contentTypeName = child.GetAttribute(ATTRIBUTE_CONTENT_TYPE);
-                Type contentType = assembly.GetType(contentTypeName);
+                Type? contentType = assembly.GetType(contentTypeName);
                 Trace.Assert(null != contentType);
                 if (typeof(string) == contentType)
                 {
                     item.Content = child.GetAttribute(ATTRIBUTE_CONTENT_STRING);
                 }
-                else
+                else if (contentType is not null)
                 {
                     item.Content = Activator.CreateInstance(contentType);
                 }
@@ -714,14 +771,23 @@ namespace General.WPF
             List<FrameworkElement> controls = new List<FrameworkElement>();
             foreach (XmlElement child in element.ChildNodes)
             {
-                FrameworkElement control = this.loadLayout(child);
+                FrameworkElement? control = this.loadLayout(child);
+                if (control is null)
+                {
+                    continue;
+                }
+
                 if (control is TabControl)
                 {
+#pragma warning disable CS8604 // 引用类型参数可能为 null。
                     this.loadLayout(child, control as TabControl);
+#pragma warning restore CS8604 // 引用类型参数可能为 null。
                 }
                 else if (control is Grid)
                 {
+#pragma warning disable CS8604 // 引用类型参数可能为 null。
                     this.loadLayout(child, control as Grid);
+#pragma warning restore CS8604 // 引用类型参数可能为 null。
                 }
                 controls.Add(control);
             }
@@ -742,8 +808,8 @@ namespace General.WPF
             XmlDocument document = new XmlDocument();
             document.LoadXml(layout);
 
-            XmlElement root = document.FirstChild as XmlElement;
-            if (null == root || NAME_ROOT != root.Name)
+            XmlElement? root = document.FirstChild as XmlElement;
+            if (root is null || NAME_ROOT != root.Name)
             {
                 return;
             }

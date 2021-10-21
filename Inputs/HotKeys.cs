@@ -15,7 +15,7 @@ namespace General.WPF
 
         static public void Register(Key key, ModifierKeys modifiers, Action action)
         {
-            List<Action> actions;
+            List<Action>? actions;
             ulong realKey = MakeKey(key, modifiers);
             if (!sKeyMap.TryGetValue(realKey, out actions))
             {
@@ -26,7 +26,7 @@ namespace General.WPF
 
         static public void Unregister(Key key, ModifierKeys modifiers, Action action)
         {
-            List<Action> actions;
+            List<Action>? actions;
             ulong realKey = MakeKey(key, modifiers);
             if (!sKeyMap.TryGetValue(realKey, out actions))
             {
@@ -42,7 +42,7 @@ namespace General.WPF
 
         static public void Update(KeyEventArgs e)
         {
-            List<Action> actions;
+            List<Action>? actions;
             ulong key = MakeKey(e.Key, Keyboard.Modifiers);
             if (!sKeyMap.TryGetValue(key, out actions))
             {

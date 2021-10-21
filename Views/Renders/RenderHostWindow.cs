@@ -12,7 +12,7 @@ namespace General.WPF
     public class RenderHostWindow : HwndHost
     {
         public delegate void OnWindowCreate(IntPtr handle);
-        public event OnWindowCreate onWindowCreate = null;
+        public event OnWindowCreate? onWindowCreate = null;
 
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {

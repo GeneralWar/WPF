@@ -14,14 +14,14 @@ namespace General.WPF
         static public readonly DependencyProperty IsEditingProperty = DependencyProperty.Register("IsEditing", typeof(bool), typeof(EditableLabel));
         static public readonly DependencyProperty IsSelectedProperty = DependencyProperty.Register("IsSelected", typeof(bool), typeof(EditableLabel));
 
-        public string Text { get { return GetValue(TextProperty) as string; } set { SetValue(TextProperty, value); } }
+        public string Text { get { return GetValue(TextProperty) as string ?? ""; } set { SetValue(TextProperty, value); } }
 
         public bool IsEditing { get { return (bool)GetValue(IsEditingProperty); } set { SetValue(IsEditingProperty, value); } }
         public bool IsSelected { get { return (bool)GetValue(IsSelectedProperty); } set { SetValue(IsSelectedProperty, value); } }
 
         public delegate void OnEditableLabelChange(EditableLabel label);
-        public event OnEditableLabelChange onEditCancel = null;
-        public event OnEditableLabelChange onEditFinish = null;
+        public event OnEditableLabelChange? onEditCancel = null;
+        public event OnEditableLabelChange? onEditFinish = null;
 
         private bool mIsEditCanceled = false;
 
@@ -31,8 +31,8 @@ namespace General.WPF
 
             this.LostFocus += this.onLostFocus;
 
-            TextBox input = this.Template.FindName("InputBox", this) as TextBox;
-            if (null != input)
+            TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
+            if (input is not null)
             {
                 input.LostFocus += this.onLostFocus;
             }
@@ -57,7 +57,7 @@ namespace General.WPF
             {
                 if (e.NewValue is bool)
                 {
-                    TextBox input = this.Template.FindName("InputBox", this) as TextBox;
+                    TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
                     if (input is null)
                     {
                         return;

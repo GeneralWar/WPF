@@ -12,13 +12,13 @@ namespace General.WPF
     public partial class TreeViewItem : System.Windows.Controls.TreeViewItem, ITreeViewItemCollection
     {
         public delegate void OnItemHeaderChange(TreeViewItem item);
-        public event OnItemHeaderChange onItemHeaderChange = null;
+        public event OnItemHeaderChange? onItemHeaderChange = null;
 
         public delegate void OnItemsChange(object sender, NotifyCollectionChangedEventArgs e);
-        public event OnItemsChange onItemsChange = null;
+        public event OnItemsChange? onItemsChange = null;
 
-        private Border mTextBoard = null;
-        private Border mInputBoard = null;
+        private Border? mTextBoard = null;
+        private Border? mInputBoard = null;
 
         public TreeViewItem()
         {
@@ -55,8 +55,8 @@ namespace General.WPF
         {
             if (this.IsSelected && MouseButton.Left == e.ChangedButton && this.IsHeaderArea(this.InputHitTest(e.GetPosition(this))))
             {
-                TreeView root = this.GetTreeViewOwner();
-                if (1 == root.SelectedItems.Count() && this == root.SelectedItems.ElementAt(0))
+                TreeView? root = this.GetTreeViewOwner();
+                if (root is not null && 1 == root.SelectedItems.Count() && this == root.SelectedItems.ElementAt(0))
                 {
                     this.Edit();
                     e.Handled = true;
@@ -71,14 +71,14 @@ namespace General.WPF
                 return;
             }
 
-            TextBox inputBox = sender as TextBox;
-            if (null == inputBox)
+            TextBox? inputBox = sender as TextBox;
+            if (inputBox is null)
             {
                 return;
             }
 
-            TreeViewItem item = inputBox.Tag as TreeViewItem;
-            if (null == item)
+            TreeViewItem? item = inputBox.Tag as TreeViewItem;
+            if (item is null)
             {
                 return;
             }
@@ -92,8 +92,8 @@ namespace General.WPF
         /// <param name="item">The TreeViewItem which want to edit</param>
         public void Edit()
         {
-            TextBox inputBox = this.Template?.FindName("InputBox", this) as TextBox;
-            if (null == inputBox)
+            TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
+            if (inputBox is null)
             {
                 return;
             }
@@ -106,8 +106,8 @@ namespace General.WPF
 
         private void onItemInputLostFocus(object sender, RoutedEventArgs e)
         {
-            TreeViewItem item = sender is TextBox ? (sender as TextBox).Tag as TreeViewItem : sender as TreeViewItem;
-            if (null == item)
+            TreeViewItem? item = sender is TextBox ? (sender as TextBox)?.Tag as TreeViewItem : sender as TreeViewItem;
+            if (item is null)
             {
                 return;
             }
@@ -119,8 +119,8 @@ namespace General.WPF
             //    item.Foreground = SystemColors.InactiveSelectionHighlightTextBrush;
             //}
 
-            IInputElement hitControl = item.InputHitTest(InputManager.Current.PrimaryMouseDevice.GetPosition(item));
-            if (null != hitControl)
+            IInputElement? hitControl = item.InputHitTest(InputManager.Current.PrimaryMouseDevice.GetPosition(item));
+            if (hitControl is null)
             {
                 return;
             }
@@ -136,8 +136,8 @@ namespace General.WPF
         {
             //Trace.Assert(mEditingItem == item); // can occur when deleting item
 
-            TextBox inputBox = item.Template?.FindName("InputBox", item) as TextBox;
-            if (null == inputBox)
+            TextBox? inputBox = item.Template?.FindName("InputBox", item) as TextBox;
+            if (inputBox is null)
             {
                 return;
             }

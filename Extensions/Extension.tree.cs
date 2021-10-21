@@ -4,7 +4,7 @@ namespace General.WPF
 {
     static public partial class Extension
     {
-        public static TreeView GetTreeViewOwner(this TreeViewItem item)
+        public static TreeView? GetTreeViewOwner(this TreeViewItem item)
         {
             if (item.Parent is TreeView)
             {

@@ -7,10 +7,10 @@ namespace General.WPF
     /// </summary>
     public partial class RenderView : UserControl
     {
-        private RenderHostWindow mHostWindow = null;
+        private RenderHostWindow mHostWindow;
         public RenderHostWindow HostWindow => mHostWindow;
 
-        public event RenderHostWindow.OnWindowCreate onWindowCreate = null;
+        public event RenderHostWindow.OnWindowCreate? onWindowCreate = null;
 
         public RenderView()
         {
