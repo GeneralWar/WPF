@@ -1,5 +1,8 @@
-﻿using System.Collections.Specialized;
+﻿using System;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,14 +14,16 @@ namespace General.WPF
     /// </summary>
     public partial class TreeViewItem : System.Windows.Controls.TreeViewItem, ITreeViewItemCollection
     {
-        public delegate void OnItemHeaderChange(TreeViewItem item);
-        public event OnItemHeaderChange? onItemHeaderChange = null;
+        public delegate bool OnItemHeaderChange(TreeViewItem item, string oldName, string newName);
+        public event OnItemHeaderChange? onItemHeaderChanging = null;
 
         public delegate void OnItemsChange(object sender, NotifyCollectionChangedEventArgs e);
         public event OnItemsChange? onItemsChange = null;
 
         private Border? mTextBoard = null;
         private Border? mInputBoard = null;
+
+        private bool mIsEditing = false;
 
         public TreeViewItem()
         {
@@ -53,13 +58,27 @@ namespace General.WPF
 
         private void onMouseDown(MouseButtonEventArgs e)
         {
-            if (this.IsSelected && MouseButton.Left == e.ChangedButton && this.IsHeaderArea(this.InputHitTest(e.GetPosition(this))))
+            FrameworkElement? hit = this.InputHitTest(e.GetPosition(this)) as FrameworkElement;
+            TreeViewItem? ancestor = hit?.FindAncestor<TreeViewItem>();
+            if (this != ancestor)
+            {
+                return;
+            }
+
+            if (this.IsSelected && MouseButton.Left == e.ChangedButton/* && this.IsHeaderArea(this.InputHitTest(e.GetPosition(this)))*/)
             {
                 TreeView? root = this.GetTreeViewOwner();
-                if (root is not null && 1 == root.SelectedItems.Count() && this == root.SelectedItems.ElementAt(0))
+                if (root is not null)
                 {
-                    this.Edit();
-                    e.Handled = true;
+                    if (root.IsOnlySelected(this))
+                    {
+                        this.Edit();
+                        e.Handled = true;
+                    }
+                    else
+                    {
+                        root.Select(this);
+                    }
                 }
             }
         }
@@ -77,13 +96,13 @@ namespace General.WPF
                 return;
             }
 
-            TreeViewItem? item = inputBox.Tag as TreeViewItem;
-            if (item is null)
+            TreeViewItem? item = inputBox.FindAncestor<TreeViewItem>();
+            if (this != item)
             {
                 return;
             }
 
-            this.Commit(item);
+            this.Commit();
         }
 
         /// <summary>
@@ -92,11 +111,18 @@ namespace General.WPF
         /// <param name="item">The TreeViewItem which want to edit</param>
         public void Edit()
         {
+            if (mIsEditing)
+            {
+                return;
+            }
+
             TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
             if (inputBox is null)
             {
                 return;
             }
+
+            mIsEditing = true;
 
             inputBox.LostFocus += onItemInputLostFocus;
             inputBox.Visibility = Visibility.Visible;
@@ -106,7 +132,7 @@ namespace General.WPF
 
         private void onItemInputLostFocus(object sender, RoutedEventArgs e)
         {
-            TreeViewItem? item = sender is TextBox ? (sender as TextBox)?.Tag as TreeViewItem : sender as TreeViewItem;
+            TreeViewItem? item = (sender as FrameworkElement)?.FindAncestor<TreeViewItem>();
             if (item is null)
             {
                 return;
@@ -119,40 +145,111 @@ namespace General.WPF
             //    item.Foreground = SystemColors.InactiveSelectionHighlightTextBrush;
             //}
 
-            IInputElement? hitControl = item.InputHitTest(InputManager.Current.PrimaryMouseDevice.GetPosition(item));
-            if (hitControl is null)
+            FrameworkElement? hitControl = item.InputHitTest(InputManager.Current.PrimaryMouseDevice.GetPosition(item)) as FrameworkElement;
+            if (hitControl is not null)
+            {
+                TreeViewItem? focusedItem = hitControl.FindAncestor<TreeViewItem>();
+                if (this == focusedItem)
+                {
+                    return;
+                }
+            }
+
+            FrameworkElement? currentFocused = FocusManager.GetFocusedElement(this.GetTopWindow()) as FrameworkElement;
+            if (this.IsAncestorOf(currentFocused))
             {
                 return;
             }
 
-            this.Commit(item);
+            this.Commit();
         }
 
         /// <summary>
         /// Commit the text in TextBox as the item's header
         /// </summary>
         /// <param name="item">The TreeViewItem which want to commit</param>
-        public void Commit(TreeViewItem item)
+        public void Commit()
         {
             //Trace.Assert(mEditingItem == item); // can occur when deleting item
 
-            TextBox? inputBox = item.Template?.FindName("InputBox", item) as TextBox;
-            if (inputBox is null)
+            if (!mIsEditing)
             {
                 return;
             }
 
-            inputBox.LostFocus -= onItemInputLostFocus;
-            inputBox.Visibility = Visibility.Hidden;
+            TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
+            if (inputBox is not null)
+            {
+                inputBox.LostFocus -= onItemInputLostFocus;
+                inputBox.Visibility = Visibility.Hidden;
 
-            item.Header = inputBox.Text;
-            this.onItemHeaderChange?.Invoke(item);
+                string currentText = this.Header as string ?? "";
+                string targetText = inputBox.Text;
+                if (currentText != targetText)
+                {
+                    bool changeResult = true;
+                    try
+                    {
+                        changeResult = this.onItemHeaderChanging?.Invoke(this, currentText, targetText) ?? true; // if no handler, default is true
+                    }
+                    catch (Exception e)
+                    {
+                        Trace.Assert(false, e.ToString());
+                        changeResult = false;
+                    }
+                    finally
+                    {
+                        if (changeResult)
+                        {
+                            this.Header = targetText;
+                        }
+                        else
+                        {
+                            inputBox.Text = currentText;
+                        }
+                    }                    
+                }
+            }
+
+            mIsEditing = false;
         }
 
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
         {
             base.OnItemsChanged(e);
             this.onItemsChange?.Invoke(this, e);
+        }
+
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+
+            if (e.Property == IsSelectedProperty)
+            {
+                this.Select((bool)e.NewValue);
+            }
+        }
+
+        private void Select(bool isSelected)
+        {
+            TreeView? tree = this.FindAncestor<TreeView>();
+            if (tree is null)
+            {
+                return;
+            }
+
+            if (isSelected)
+            {
+                tree.Select(this);
+            }
+            else
+            {
+                tree.Unselect(this);
+                if (mIsEditing)
+                {
+                    this.Commit();
+                }
+            }
         }
     }
 }

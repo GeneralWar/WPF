@@ -16,6 +16,17 @@ namespace General.WPF
     public partial class TreeView : System.Windows.Controls.TreeView, ITreeViewItemCollection
     {
         static private readonly PropertyInfo? IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
+        static private readonly DependencyPropertyKey SelectedItemPropertyKey;
+
+        static TreeView()
+        {
+            DependencyPropertyKey? key = typeof(System.Windows.Controls.TreeView).GetField("SelectedItemPropertyKey", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) as DependencyPropertyKey;
+            if (key is null)
+            {
+                throw new NullReferenceException();
+            }
+            SelectedItemPropertyKey = key;
+        }
 
         public delegate void OnSelectedItemsChange(IEnumerable<TreeViewItem> items);
         public event OnSelectedItemsChange? onSelectedItemsChange = null;
@@ -94,19 +105,14 @@ namespace General.WPF
             }
         }
 
+        protected override void OnSelectedItemChanged(RoutedPropertyChangedEventArgs<object> e)
+        {
+            base.OnSelectedItemChanged(e);
+        }
+
         private void onItemMouseDown(object sender, MouseButtonEventArgs e)
         {
             Console.WriteLine(sender);
-        }
-
-        private TreeViewItem? getTreeViewItem(FrameworkElement? element)
-        {
-            FrameworkElement? current = element;
-            while (current is not null && current is not TreeViewItem)
-            {
-                current = current.TemplatedParent as FrameworkElement;
-            }
-            return current as TreeViewItem;
         }
 
         private void onItemPreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -122,14 +128,21 @@ namespace General.WPF
                 return;
             }
 
-            IInputElement hit = item.InputHitTest(e.GetPosition(item));
-            item = this.getTreeViewItem(hit as FrameworkElement);
-            if (null == item || !item.IsHeaderArea(hit))
+            FrameworkElement? hit = item.InputHitTest(e.GetPosition(item)) as FrameworkElement;
+            if (hit is null)
+            {
+                return;
+            }
+
+            item = hit.FindAncestor<TreeViewItem>();
+            if (item is null || item != sender/* || !item.IsHeaderArea(hit)*/)
             {
                 return;
             }
 
             e.Handled = true;
+
+            object? selected = this.SelectedItem;
 
             if (this.handleItemClick(item, e))
             {
@@ -150,12 +163,12 @@ namespace General.WPF
             {
                 if (item.IsSelected)
                 {
-                    this.unselect(item);
+                    this.Unselect(item);
                     return true;
                 }
                 else
                 {
-                    this.append(item);
+                    this.AppendSelected(item);
                     return true;
                 }
             }
@@ -182,7 +195,7 @@ namespace General.WPF
                     return false;
                 }
 
-                this.select(item);
+                this.Select(item);
                 return true;
             }
 
@@ -221,14 +234,11 @@ namespace General.WPF
             int shallow = Math.Min(fromPath.Length, toPath.Length);
             for (int i = 0; i < shallow; ++i, ++forkDepth)
             {
-                if (fromPath[i] == toPath[i])
-                {
-                    forkCollection = fromPath[i].Items;
-                }
-                else
+                if (fromPath[i] != toPath[i])
                 {
                     break;
                 }
+                forkCollection = fromPath[i].Items;
             }
 
             int fromIndex = forkCollection.IndexOf(fromPath[forkDepth]);
@@ -273,16 +283,17 @@ namespace General.WPF
             }
         }
 
-        private void select(TreeViewItem item)
+        internal void Select(TreeViewItem item)
         {
             this.clearSelectedItems();
             item.IsSelected = true;
             mSelectedItems.Add(mLastOperatedItem = item);
+            SetValue(SelectedItemPropertyKey, item);
             item.Focus();
             this.reportSelectedItemsChange();
         }
 
-        private void append(TreeViewItem item)
+        internal void AppendSelected(TreeViewItem item)
         {
             item.IsSelected = true;
             mSelectedItems.Add(mLastOperatedItem = item);
@@ -312,7 +323,7 @@ namespace General.WPF
             this.reportSelectedItemsChange();
         }
 
-        private void unselect(TreeViewItem item)
+        internal void Unselect(TreeViewItem item)
         {
             item.IsSelected = false;
             mLastOperatedItem = item;
@@ -320,9 +331,37 @@ namespace General.WPF
             this.reportSelectedItemsChange();
         }
 
+        public bool IsOnlySelected(TreeViewItem item)
+        {
+            if (1 != mSelectedItems.Count)
+            {
+                return false;
+            }
+
+            return mSelectedItems.First() == item;
+        }
+
         private void reportSelectedItemsChange()
         {
-            this.onSelectedItemsChange?.Invoke(mSelectedItems);
+            this.onSelectedItemsChange?.Invoke(new List<TreeViewItem>(mSelectedItems));
+        }
+
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            this.checkClearSelectedItems(e);
+        }
+
+        private void checkClearSelectedItems(MouseButtonEventArgs e)
+        {
+            IInputElement? input = this.InputHitTest(e.GetPosition(this));
+            if (input.FindAncestor<TreeViewItem>() is not null)
+            {
+                return;
+            }
+
+            this.clearSelectedItems();
         }
 
         private void clearSelectedItems()

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 
 namespace General.WPF
 {
@@ -9,7 +10,7 @@ namespace General.WPF
             FrameworkElement? item = element;
             while (null != item && item is not Window)
             {
-                item = item.Parent as FrameworkElement;
+                item = item.GetRealParent() as FrameworkElement;
             }
             return item as Window;
         }
@@ -31,15 +32,34 @@ namespace General.WPF
             return parent == testParent;
         }
 
-        static public T? GetElementUpward<T>(this IInputElement element) where T : FrameworkElement
+        public static bool IsChildOf(this FrameworkElement element, FrameworkElement[] testParents, out FrameworkElement? parent, bool includeSelf = false)
         {
-            if (element is T)
+            if (Array.IndexOf(testParents, element) > -1)
             {
-                return element as T;
+                parent = null;
+                return includeSelf;
             }
 
+            parent = element;
+            while (parent is not null && Array.IndexOf(testParents, parent = parent.GetRealParent()) > -1) ;
+            return Array.IndexOf(testParents, parent) > -1;
+        }
+
+        static public T? FindAncestor<T>(this IInputElement element) where T : FrameworkElement
+        {
+            return element.FindAncestor<T>(true);
+        }
+
+        static public T? FindAncestor<T>(this IInputElement element, bool includeSelf) where T : FrameworkElement
+        {
             FrameworkElement? parent = element as FrameworkElement;
-            while (parent is not T && (parent = parent?.GetRealParent()) is not null) ;
+            if (includeSelf && parent is T)
+            {
+                return parent as T;
+            }
+
+            parent = parent?.Parent as FrameworkElement;
+            while (parent is not null && parent is not T && (parent = parent?.GetRealParent()) is not null) ;
             return parent as T;
         }
     }
