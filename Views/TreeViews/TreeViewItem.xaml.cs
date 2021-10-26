@@ -14,6 +14,8 @@ namespace General.WPF
     /// </summary>
     public partial class TreeViewItem : System.Windows.Controls.TreeViewItem, ITreeViewItemCollection
     {
+        static public DependencyProperty IsEditableProperty = DependencyProperty.Register(nameof(IsEditable), typeof(bool), typeof(TreeViewItem));
+
         public delegate bool OnItemHeaderChange(TreeViewItem item, string oldName, string newName);
         public event OnItemHeaderChange? onItemHeaderChanging = null;
 
@@ -24,6 +26,8 @@ namespace General.WPF
         private Border? mInputBoard = null;
 
         private bool mIsEditing = false;
+
+        public bool IsEditable { get { return (bool)GetValue(IsEditableProperty); } set { SetValue(IsEditableProperty, value); } }
 
         public TreeViewItem()
         {
@@ -111,6 +115,11 @@ namespace General.WPF
         /// <param name="item">The TreeViewItem which want to edit</param>
         public void Edit()
         {
+            if (!this.IsEditable)
+            {
+                return;
+            }
+
             if (mIsEditing)
             {
                 return;
@@ -207,7 +216,7 @@ namespace General.WPF
                         {
                             inputBox.Text = currentText;
                         }
-                    }                    
+                    }
                 }
             }
 
