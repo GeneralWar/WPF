@@ -156,7 +156,7 @@ namespace General.WPF
             }
 
             FrameworkElement? currentFocused = FocusManager.GetFocusedElement(this.GetTopWindow()) as FrameworkElement;
-            if (this.IsAncestorOf(currentFocused))
+            if (currentFocused is null || this.IsAncestorOf(currentFocused)) // it may be null when exiting the application
             {
                 return;
             }

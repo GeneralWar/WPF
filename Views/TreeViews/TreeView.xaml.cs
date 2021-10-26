@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -285,10 +286,20 @@ namespace General.WPF
 
         internal void Select(TreeViewItem item)
         {
-            this.clearSelectedItems();
+            foreach (TreeViewItem recorded in mSelectedItems)
+            {
+                if (item == recorded)
+                {
+                    continue;
+                }
+                recorded.IsSelected = false;
+            }
+            mSelectedItems.Clear();
+
             item.IsSelected = true;
             mSelectedItems.Add(mLastOperatedItem = item);
             SetValue(SelectedItemPropertyKey, item);
+
             item.Focus();
             this.reportSelectedItemsChange();
         }
