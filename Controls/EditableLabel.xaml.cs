@@ -22,6 +22,9 @@ namespace General.WPF
         public event OnEditableLabelChange? onEditCancel = null;
         public event OnEditableLabelChange? onEditFinish = null;
 
+        public delegate bool OnEditableLabelChanging(EditableLabel label, string newText);
+        public event OnEditableLabelChanging? onLabelChanging = null;
+
         private bool mIsEditCanceled = false;
 
         public EditableLabel()
@@ -92,15 +95,16 @@ namespace General.WPF
                             return;
                         }
 
-                        if (mIsEditCanceled)
+                        string newText = input.Text;
+                        if (!mIsEditCanceled && (this.onLabelChanging?.Invoke(this, newText) ?? true))
                         {
-                            input.Text = this.Text;
-                            this.onEditCancel?.Invoke(this);
+                            this.Text = newText;
+                            this.onEditFinish?.Invoke(this);
                         }
                         else
                         {
-                            this.Text = input.Text;
-                            this.onEditFinish?.Invoke(this);
+                            input.Text = this.Text;
+                            this.onEditCancel?.Invoke(this);
                         }
                         mIsEditCanceled = false;
                     }
