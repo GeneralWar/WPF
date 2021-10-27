@@ -34,10 +34,11 @@ namespace General.WPF
 
         public static bool IsChildOf(this FrameworkElement element, FrameworkElement[] testParents, out FrameworkElement? parent, bool includeSelf = false)
         {
-            if (Array.IndexOf(testParents, element) > -1)
+            int index = Array.IndexOf(testParents, element);
+            if (includeSelf && index > -1)
             {
-                parent = null;
-                return includeSelf;
+                parent = testParents[index];
+                return true;
             }
 
             parent = element;

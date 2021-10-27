@@ -9,10 +9,6 @@ namespace General.WPF
     /// </summary>
     public partial class EditableLabel : UserControl
     {
-        static public readonly DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string), typeof(EditableLabel));
-        static public readonly DependencyProperty IsEditingProperty = DependencyProperty.Register("IsEditing", typeof(bool), typeof(EditableLabel));
-        static public readonly DependencyProperty IsSelectedProperty = DependencyProperty.Register("IsSelected", typeof(bool), typeof(EditableLabel));
-
         public string Text { get { return GetValue(TextProperty) as string ?? ""; } set { SetValue(TextProperty, value); } }
 
         public bool IsEditing { get { return (bool)GetValue(IsEditingProperty); } set { SetValue(IsEditingProperty, value); } }
@@ -25,7 +21,14 @@ namespace General.WPF
         public delegate bool OnEditableLabelChanging(EditableLabel label, string newText);
         public event OnEditableLabelChanging? onLabelChanging = null;
 
+        public EditState State { get { return (EditState)GetValue(StateProperty); } private set { SetValue(StateProperty, value); } }
+        public delegate void OnStateChange(StateChangingEvent e);
+        public event OnStateChange? onStateChanging = null;
+
+        private bool mIsCommiting = false;
         private bool mIsEditCanceled = false;
+
+        private string? mPlaceHolder = null;
 
         public EditableLabel()
         {
@@ -57,11 +60,69 @@ namespace General.WPF
 
             if (this.IsEditing)
             {
-                this.beginEditing();
+                this.internalBeginEditing();
             }
         }
 
-        private void beginEditing()
+        public void BeginEditing()
+        {
+            this.IsEditing = true;
+        }
+
+        public void BeginEditing(string placeHolder)
+        {
+            mPlaceHolder = placeHolder;
+            this.IsEditing = true;
+        }
+
+        private bool internalBeginEditing()
+        {
+            if (this.onStateChanging is not null)
+            {
+                StateChangingEvent e = new StateChangingEvent(this.State, EditState.Editing);
+                this.onStateChanging.Invoke(e);
+                if (e.Canceled)
+                {
+                    return false;
+                }
+            }
+
+            TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
+            if (input is null)
+            {
+                return true; // Template not applied, assumed to be a new created label with editing state
+            }
+
+            if (!string.IsNullOrWhiteSpace(mPlaceHolder))
+            {
+                input.Text = mPlaceHolder;
+                mPlaceHolder = null;
+            }
+            input.SelectAll();
+            input.Focus();
+            this.State = EditState.Editing;
+            return true;
+        }
+
+        private void Commit()
+        {
+            if (mIsCommiting)
+            {
+                return;
+            }
+
+            mIsCommiting = true;
+
+            this.internal_commit();
+
+            mIsEditCanceled = false;
+            this.IsEditing = false;
+            mIsCommiting = false;
+
+            this.State = this.IsSelected ? EditState.Selected : EditState.Normal;
+        }
+
+        private void internal_commit()
         {
             TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
             if (input is null)
@@ -69,8 +130,26 @@ namespace General.WPF
                 return;
             }
 
-            input.SelectAll();
-            input.Focus();
+            string oldText = this.Text;
+            string newText = input.Text;
+            if (!mIsEditCanceled && oldText == newText)
+            {
+                return;
+            }
+
+            if (!mIsEditCanceled && (this.onLabelChanging?.Invoke(this, newText) ?? true))
+            {
+                if (oldText != newText)
+                {
+                    this.Text = newText;
+                    this.onEditFinish?.Invoke(this);
+                }
+            }
+            else
+            {
+                input.Text = oldText;
+                this.onEditCancel?.Invoke(this);
+            }
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
@@ -79,41 +158,20 @@ namespace General.WPF
 
             if (e.Property == IsEditingProperty)
             {
-                if (e.NewValue is bool)
+                bool isEditing = (bool)e.NewValue;
+                if (!isEditing || !this.internalBeginEditing())
                 {
-                    bool isEditing = (bool)e.NewValue;
-                    if (isEditing)
-                    {
-                        this.beginEditing();
-                    }
-                    else
-                    {
-                        var finder = this.Template.FindName("InputBox", this);
-                        TextBox? input = this.Template.FindName("InputBox", this) as TextBox;
-                        if (input is null)
-                        {
-                            return;
-                        }
-
-                        string newText = input.Text;
-                        if (!mIsEditCanceled && (this.onLabelChanging?.Invoke(this, newText) ?? true))
-                        {
-                            this.Text = newText;
-                            this.onEditFinish?.Invoke(this);
-                        }
-                        else
-                        {
-                            input.Text = this.Text;
-                            this.onEditCancel?.Invoke(this);
-                        }
-                        mIsEditCanceled = false;
-                    }
+                    this.Commit();
                 }
             }
-
-            if (e.Property == IsSelectedProperty && e.NewValue is bool && !(bool)e.NewValue)
+            else if (e.Property == IsSelectedProperty)
             {
-                this.IsEditing = false;
+                bool isSelected = (bool)e.NewValue;
+                if (!IsSelected)
+                {
+                    this.IsEditing = false;
+                }
+                this.State = IsSelected ? EditState.Selected : EditState.Normal;
             }
         }
 
