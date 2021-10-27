@@ -46,12 +46,12 @@ namespace General.WPF
             return Array.IndexOf(testParents, parent) > -1;
         }
 
-        static public T? FindAncestor<T>(this IInputElement element) where T : FrameworkElement
+        static public T? FindAncestor<T>(this IInputElement element) where T : class
         {
             return element.FindAncestor<T>(true);
         }
 
-        static public T? FindAncestor<T>(this IInputElement element, bool includeSelf) where T : FrameworkElement
+        static public T? FindAncestor<T>(this IInputElement element, bool includeSelf) where T : class
         {
             FrameworkElement? parent = element as FrameworkElement;
             if (includeSelf && parent is T)

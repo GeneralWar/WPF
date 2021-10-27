@@ -25,6 +25,7 @@ namespace General.WPF
         public delegate void OnStateChange(StateChangingEvent e);
         public event OnStateChange? onStateChanging = null;
 
+        private bool mCanEdit = false;
         private bool mIsCommiting = false;
         private bool mIsEditCanceled = false;
 
@@ -43,14 +44,22 @@ namespace General.WPF
             }
         }
 
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            mCanEdit = this.IsSelected;
+        }
+
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
 
             if (MouseButton.Left == e.ChangedButton && this.IsSelected)
             {
-                this.IsEditing = true;
+                this.IsEditing = mCanEdit;
                 e.Handled = true;
+                mCanEdit = false;
             }
         }
 
@@ -167,7 +176,7 @@ namespace General.WPF
             else if (e.Property == IsSelectedProperty)
             {
                 bool isSelected = (bool)e.NewValue;
-                if (!IsSelected)
+                if (!isSelected)
                 {
                     this.IsEditing = false;
                 }
