@@ -12,7 +12,7 @@ namespace General.WPF
     /// <summary>
     /// TreeViewItem.xaml 的交互逻辑
     /// </summary>
-    public partial class TreeViewItem : System.Windows.Controls.TreeViewItem, ITreeViewItemCollection
+    public partial class TreeViewItem : System.Windows.Controls.TreeViewItem, ITreeViewItemCollection, IMultipleSelectionsItem
     {
         static public DependencyProperty IsEditableProperty = DependencyProperty.Register(nameof(IsEditable), typeof(bool), typeof(TreeViewItem));
 
@@ -28,6 +28,12 @@ namespace General.WPF
         private bool mIsEditing = false;
 
         public bool IsEditable { get { return (bool)GetValue(IsEditableProperty); } set { SetValue(IsEditableProperty, value); } }
+
+        private IMultipleSelectionsCollection? mCollection = null;
+        private IMultipleSelectionsCollection Collection => mCollection ?? throw new NullReferenceException();
+        IMultipleSelectionsCollection IMultipleSelectionsItem.Collection => this.Collection;
+
+        private string mHeader = "";
 
         public TreeViewItem()
         {
@@ -48,43 +54,54 @@ namespace General.WPF
             return element is TextBlock || element == mTextBoard || element == mInputBoard;
         }
 
+        protected override void OnVisualParentChanged(DependencyObject oldParent)
+        {
+            base.OnVisualParentChanged(oldParent);
+            mCollection = (this.Parent as IMultipleSelectionsCollection) ?? (this.Parent as IMultipleSelectionsItem)?.Collection;
+        }
+
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
-            this.onMouseDown(e);
-        }
 
-        protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
-        {
-            base.OnPreviewMouseDown(e);
-            this.onMouseDown(e);
-        }
-
-        private void onMouseDown(MouseButtonEventArgs e)
-        {
-            FrameworkElement? hit = this.InputHitTest(e.GetPosition(this)) as FrameworkElement;
-            TreeViewItem? ancestor = hit?.FindAncestor<TreeViewItem>();
-            if (this != ancestor)
+            TreeViewItem? item = (e.Source as FrameworkElement)?.FindAncestor<TreeViewItem>();
+            if (this != item)
             {
                 return;
             }
 
-            if (this.IsSelected && MouseButton.Left == e.ChangedButton/* && this.IsHeaderArea(this.InputHitTest(e.GetPosition(this)))*/)
+            e.Handled = true;
+
+            if (e.IsShiftDown())
             {
-                TreeView? root = this.GetTreeViewOwner();
-                if (root is not null)
-                {
-                    if (root.IsOnlySelected(this))
-                    {
-                        this.Edit();
-                        e.Handled = true;
-                    }
-                    else
-                    {
-                        root.Select(this);
-                    }
-                }
+                this.Collection.SelectTo(this);
+                return;
             }
+
+            if (e.IsControlDown())
+            {
+                this.Collection.Append(this);
+                return;
+            }
+
+            if (MouseButton.Left == e.ChangedButton)
+            {
+                if (!this.IsSelected || !(this as IMultipleSelectionsItem).IsOnlySelected())
+                {
+                    this.Collection.Select(this);
+                }
+                else
+                {
+                    this.Edit();
+                }
+                return;
+            }
+            else if (MouseButton.Right == e.ChangedButton)
+            {
+                return;
+            }
+
+            Trace.Assert(false, "Unexpected condition");
         }
 
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)
@@ -133,6 +150,8 @@ namespace General.WPF
 
             mIsEditing = true;
 
+            mHeader = this.Header as string ?? "";
+
             inputBox.LostFocus += onItemInputLostFocus;
             inputBox.Visibility = Visibility.Visible;
             inputBox.SelectAll();
@@ -164,7 +183,13 @@ namespace General.WPF
                 }
             }
 
-            FrameworkElement? currentFocused = FocusManager.GetFocusedElement(this.GetTopWindow()) as FrameworkElement;
+            Window? window = this.GetTopWindow();
+            if (window is null) // assumed to be deleting
+            {
+                return;
+            }
+
+            FrameworkElement? currentFocused = FocusManager.GetFocusedElement(window) as FrameworkElement;
             if (currentFocused is null || this.IsAncestorOf(currentFocused)) // it may be null when exiting the application
             {
                 return;
@@ -192,7 +217,7 @@ namespace General.WPF
                 inputBox.LostFocus -= onItemInputLostFocus;
                 inputBox.Visibility = Visibility.Hidden;
 
-                string currentText = this.Header as string ?? "";
+                string currentText = mHeader;
                 string targetText = inputBox.Text;
                 if (currentText != targetText)
                 {
@@ -241,24 +266,21 @@ namespace General.WPF
 
         private void Select(bool isSelected)
         {
-            TreeView? tree = this.FindAncestor<TreeView>();
-            if (tree is null)
-            {
-                return;
-            }
-
             if (isSelected)
             {
-                tree.Select(this);
-            }
-            else
-            {
-                tree.Unselect(this);
-                if (mIsEditing)
+                if (!this.Collection.SelectedItems.Contains(this))
                 {
-                    this.Commit();
+                    this.Collection.Append(this);
                 }
             }
+            //else
+            //{
+            //    this.Collection.Unselect(this);
+            //    if (mIsEditing)
+            //    {
+            //        this.Commit();
+            //    }
+            //}
         }
     }
 }

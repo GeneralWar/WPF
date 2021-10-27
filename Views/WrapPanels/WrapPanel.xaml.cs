@@ -54,6 +54,11 @@ namespace General.WPF
             mSelectedItems.Clear();
         }
 
+        void IMultipleSelectionsCollection.ClearAllSelections()
+        {
+            this.ClearAllSelections();
+        }
+
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
@@ -68,6 +73,11 @@ namespace General.WPF
             {
                 (this as IMultipleSelectionsCollection).Select(item);
             }
+        }
+
+        void IMultipleSelectionsCollection.SelectTo(IMultipleSelectionsItem item)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -11,17 +6,17 @@ namespace General.WPF
 {
     static public partial class Extension
     {
-        public static void RemoveChild(this DependencyObject parent, UIElement child)
+        static public void RemoveChild(this DependencyObject parent, UIElement child)
         {
-            var panel = parent as Panel;
-            if (panel != null)
+            Panel? panel = parent as Panel;
+            if (panel is not null)
             {
                 panel.Children.Remove(child);
                 return;
             }
 
-            var decorator = parent as Decorator;
-            if (decorator != null)
+            Decorator? decorator = parent as Decorator;
+            if (decorator is not null)
             {
                 if (decorator.Child == child)
                 {
@@ -30,8 +25,8 @@ namespace General.WPF
                 return;
             }
 
-            var contentPresenter = parent as ContentPresenter;
-            if (contentPresenter != null)
+            ContentPresenter? contentPresenter = parent as ContentPresenter;
+            if (contentPresenter is not null)
             {
                 if (contentPresenter.Content == child)
                 {
@@ -40,13 +35,20 @@ namespace General.WPF
                 return;
             }
 
-            var contentControl = parent as ContentControl;
-            if (contentControl != null)
+            ContentControl? contentControl = parent as ContentControl;
+            if (contentControl is not null)
             {
                 if (contentControl.Content == child)
                 {
                     contentControl.Content = null;
                 }
+                return;
+            }
+
+            ItemsControl? itemsControl = parent as ItemsControl;
+            if (itemsControl is not null)
+            {
+                itemsControl.Items.Remove(child);
                 return;
             }
 

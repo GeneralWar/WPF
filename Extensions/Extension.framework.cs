@@ -63,5 +63,10 @@ namespace General.WPF
             while (parent is not null && parent is not T && (parent = parent?.GetRealParent()) is not null) ;
             return parent as T;
         }
+
+        static public void RemoveFromParent(this FrameworkElement element)
+        {
+            element?.Parent?.RemoveChild(element);
+        }
     }
 }

@@ -5,8 +5,13 @@ namespace General.WPF
     public interface IMultipleSelectionsCollection
     {
         void Select(IMultipleSelectionsItem item);
+        void SelectTo(IMultipleSelectionsItem item);
+
         void Append(IMultipleSelectionsItem item);
+
         void Unselect(IMultipleSelectionsItem item);
+
+        void ClearAllSelections();
 
         IEnumerable<IMultipleSelectionsItem> SelectedItems { get; }
     }

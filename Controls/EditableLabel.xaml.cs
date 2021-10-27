@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -30,6 +32,7 @@ namespace General.WPF
         private bool mIsEditCanceled = false;
 
         private string? mPlaceHolder = null;
+        private string? mText = null;
 
         public EditableLabel()
         {
@@ -107,6 +110,7 @@ namespace General.WPF
                 input.Text = mPlaceHolder;
                 mPlaceHolder = null;
             }
+            mText = this.Text;
             input.SelectAll();
             input.Focus();
             this.State = EditState.Editing;
@@ -139,7 +143,7 @@ namespace General.WPF
                 return;
             }
 
-            string oldText = this.Text;
+            string oldText = mText ?? "";
             string newText = input.Text;
             if (!mIsEditCanceled && oldText == newText)
             {
@@ -181,6 +185,10 @@ namespace General.WPF
                     this.IsEditing = false;
                 }
                 this.State = IsSelected ? EditState.Selected : EditState.Normal;
+            }
+            else if (e.Property == TextProperty)
+            {
+                Console.WriteLine();
             }
         }
 
