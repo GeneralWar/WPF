@@ -7,6 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="32" d:DesignWidth="128" Focusable="True">
     <UserControl.Resources>
+        <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
         <SolidColorBrush x:Key="ListBorder" Color="#828790"/>
         <Style x:Key="EditableLabel" TargetType="{x:Type UserControl}">
             <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
@@ -17,7 +18,7 @@
                         <Grid x:Name="TextBoard">
                             <Label x:Name="Label" Padding="-1" Margin="0">
                                 <Label.Content>
-                                    <Binding Path="Text" RelativeSource="{RelativeSource TemplatedParent}" Mode="OneWay" />
+                                    <Binding Path="Text" RelativeSource="{RelativeSource TemplatedParent}" Converter="{StaticResource EscapeMnemonicsStringConverter}" Mode="OneWay" />
                                 </Label.Content>
                                 <FrameworkElement.HorizontalAlignment>
                                     <Binding Path="HorizontalAlignment" RelativeSource="{RelativeSource TemplatedParent}" Mode="OneWay" />
