@@ -232,18 +232,22 @@ namespace General.WPF
         {
             base.OnMouseDown(e);
 
-            this.checkClearSelectedItems(e);
+            if (this.checkClearSelectedItems(e))
+            {
+                this.Focus();
+            }
         }
 
-        private void checkClearSelectedItems(MouseButtonEventArgs e)
+        private bool checkClearSelectedItems(MouseButtonEventArgs e)
         {
             IInputElement? input = this.InputHitTest(e.GetPosition(this));
             if (input.FindAncestor<TreeViewItem>() is not null)
             {
-                return;
+                return false;
             }
 
             this.ClearAllSelections();
+            return true;
         }
 
         private void setAsBaseSelected(IMultipleSelectionsItem? item)

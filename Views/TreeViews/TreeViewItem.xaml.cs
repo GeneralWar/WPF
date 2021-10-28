@@ -2,10 +2,10 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace General.WPF
 {
@@ -49,10 +49,16 @@ namespace General.WPF
             mInputBoard ??= this.Template.FindName("InputBoard", this) as Border;
         }
 
-        public bool IsHeaderArea(IInputElement element)
+        //public bool IsHeaderArea(IInputElement element)
+        //{
+        //    this.checkTempalteBoards();
+        //    return element is TextBlock || element == mTextBoard || element == mInputBoard;
+        //}
+
+        public override void OnApplyTemplate()
         {
+            base.OnApplyTemplate();
             this.checkTempalteBoards();
-            return element is TextBlock || element == mTextBoard || element == mInputBoard;
         }
 
         protected override void OnVisualParentChanged(DependencyObject oldParent)
@@ -71,7 +77,6 @@ namespace General.WPF
                 return;
             }
 
-            e.Handled = true;
             mCanEdit = (this as IMultipleSelectionsItem).IsOnlySelected();
 
             if (e.IsShiftDown())
@@ -111,9 +116,16 @@ namespace General.WPF
                 if (mCanEdit)
                 {
                     this.Edit();
+                    e.Handled = true;
                 }
                 mCanEdit = false;
             }
+        }
+
+        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+        {
+            base.OnMouseDoubleClick(e);
+            mCanEdit = false;
         }
 
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)
@@ -274,6 +286,7 @@ namespace General.WPF
                 inputBox.Visibility = Visibility.Hidden;
             }
             this.Header = mHeader;
+            mIsEditing = false;
         }
 
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
