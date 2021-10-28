@@ -26,6 +26,7 @@ namespace General.WPF
         private Border? mInputBoard = null;
 
         private bool mIsEditing = false;
+        private bool mCanEdit = false;
 
         public bool IsEditable { get { return (bool)GetValue(IsEditableProperty); } set { SetValue(IsEditableProperty, value); } }
 
@@ -71,6 +72,7 @@ namespace General.WPF
             }
 
             e.Handled = true;
+            mCanEdit = (this as IMultipleSelectionsItem).IsOnlySelected();
 
             if (e.IsShiftDown())
             {
@@ -90,10 +92,6 @@ namespace General.WPF
                 {
                     this.Collection.Select(this);
                 }
-                else
-                {
-                    this.Edit();
-                }
                 return;
             }
             else if (MouseButton.Right == e.ChangedButton)
@@ -104,10 +102,28 @@ namespace General.WPF
             Trace.Assert(false, "Unexpected condition");
         }
 
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            base.OnMouseUp(e);
+
+            if (MouseButton.Left == e.ChangedButton && (this as IMultipleSelectionsItem).IsOnlySelected())
+            {
+                if (mCanEdit)
+                {
+                    this.Edit();
+                }
+                mCanEdit = false;
+            }
+        }
+
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)
         {
             if (Key.Enter != e.Key)
             {
+                if (Key.Escape == e.Key)
+                {
+                    this.Cancel();
+                }
                 return;
             }
 
@@ -246,6 +262,18 @@ namespace General.WPF
             }
 
             mIsEditing = false;
+        }
+
+        private void Cancel()
+        {
+            TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
+            if (inputBox is not null)
+            {
+                inputBox.Text = mHeader;
+                inputBox.LostFocus -= onItemInputLostFocus;
+                inputBox.Visibility = Visibility.Hidden;
+            }
+            this.Header = mHeader;
         }
 
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
