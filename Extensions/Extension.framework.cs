@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace General.WPF
 {
@@ -67,6 +69,45 @@ namespace General.WPF
         static public void RemoveFromParent(this FrameworkElement element)
         {
             element?.Parent?.RemoveChild(element);
+        }
+
+        /// <summary>
+        /// Delegate to compare source element should be inserted at position of target
+        /// </summary>
+        /// <param name="target">Element to check if can insert source element at this position</param>
+        /// <returns></returns>
+        public delegate bool CollectionInsertItemDelegate<T>(T target);
+
+        static public void Insert<T>(this UIElementCollection collection, T item, CollectionInsertItemDelegate<T> compareDelegate) where T : UIElement
+        {
+            Insert<T>(collection, item, compareDelegate, collection.Insert, collection.Add);
+        }
+
+        static public void Insert<T>(this ItemCollection collection, T item, CollectionInsertItemDelegate<T> compareDelegate) where T : UIElement
+        {
+            Insert<T>(collection, item, compareDelegate, collection.Insert, collection.Add);
+        }
+
+        static public void Insert<T>(IEnumerable collection, T item, CollectionInsertItemDelegate<T> compareDelegate, Action<int, T> insert, Func<T, int> add) where T : UIElement
+        {
+            int index = 0;
+            foreach(object o in collection)
+            {
+                T? record = o as T;
+                if (record is null)
+                {
+                    continue;
+                }
+
+                if (compareDelegate?.Invoke(record) ?? false)
+                {
+                    insert.Invoke(index, item);
+                    return;
+                }
+
+                ++index;
+            }
+            add.Invoke(item);
         }
     }
 }

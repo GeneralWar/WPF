@@ -33,7 +33,7 @@ namespace General.WPF
         public UIElement? Label => (this.Template.FindName("TextBoard", this) as Border)?.Child as UIElement;
 
         private IMultipleSelectionsCollection? mCollection = null;
-        private IMultipleSelectionsCollection Collection => mCollection ?? throw new NullReferenceException();
+        private IMultipleSelectionsCollection Collection => mCollection ??= this.FindAncestor<IMultipleSelectionsCollection>() ?? throw new NullReferenceException();
         IMultipleSelectionsCollection IMultipleSelectionsItem.Collection => this.Collection;
 
         private string mHeader = "";

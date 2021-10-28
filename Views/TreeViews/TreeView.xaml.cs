@@ -110,6 +110,11 @@ namespace General.WPF
             {
                 mSelectedItems.Remove(selectable);
             }
+
+            if (this.SelectedItem == item)
+            {
+                SetValue(SelectedItemPropertyKey, null);
+            }
         }
 
         private void addItem(object item)
