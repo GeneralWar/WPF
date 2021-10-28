@@ -30,6 +30,8 @@ namespace General.WPF
 
         public bool IsEditable { get { return (bool)GetValue(IsEditableProperty); } set { SetValue(IsEditableProperty, value); } }
 
+        public UIElement? Label => (this.Template.FindName("TextBoard", this) as Border)?.Child as UIElement;
+
         private IMultipleSelectionsCollection? mCollection = null;
         private IMultipleSelectionsCollection Collection => mCollection ?? throw new NullReferenceException();
         IMultipleSelectionsCollection IMultipleSelectionsItem.Collection => this.Collection;
