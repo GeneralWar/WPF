@@ -5,7 +5,6 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace General.WPF
 {
@@ -14,7 +13,7 @@ namespace General.WPF
     /// </summary>
     public partial class TreeViewItem : System.Windows.Controls.TreeViewItem, ITreeViewItemCollection, IMultipleSelectionsItem
     {
-        static public DependencyProperty IsEditableProperty = DependencyProperty.Register(nameof(IsEditable), typeof(bool), typeof(TreeViewItem));
+        static public DependencyProperty IsEditableProperty = DependencyProperty.Register(nameof(IsEditable), typeof(bool), typeof(TreeViewItem), new PropertyMetadata(true));
 
         public delegate bool OnItemHeaderChange(TreeViewItem item, string oldName, string newName);
         public event OnItemHeaderChange? onItemHeaderChanging = null;
