@@ -37,6 +37,7 @@ namespace General.WPF
         private HashSet<IMultipleSelectionsItem> mSelectedItems = new HashSet<IMultipleSelectionsItem>();
         IEnumerable<IMultipleSelectionsItem> IMultipleSelectionsCollection.SelectedItems => mSelectedItems;
         public IEnumerable<TreeViewItem> SelectedItems => mSelectedItems.Where(i => i is TreeViewItem).Cast<TreeViewItem>().ToArray();
+        private IEnumerable<TreeViewItem> mReportedSelectedItems = new TreeViewItem[0];
 
         private IMultipleSelectionsItem? mLastOperatedItem = null;
 
@@ -216,7 +217,15 @@ namespace General.WPF
 
         private void reportSelectedItemsChange()
         {
-            this.onSelectedItemsChange?.Invoke(this.SelectedItems);
+            IEnumerable<TreeViewItem> selectedItems = this.SelectedItems;
+            IEnumerable<TreeViewItem> intersectedItems = selectedItems.Intersect(mReportedSelectedItems);
+            if (intersectedItems.Count() == mReportedSelectedItems.Count() && intersectedItems.Count() == selectedItems.Count())
+            {
+                return;
+            }
+
+            this.onSelectedItemsChange?.Invoke(selectedItems);
+            mReportedSelectedItems = selectedItems.ToArray();
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -296,6 +305,7 @@ namespace General.WPF
             item.IsSelected = true;
             (item as FrameworkElement)?.Focus();
             mLastOperatedItem = item;
+            this.reportSelectedItemsChange();
         }
 
         void IMultipleSelectionsCollection.Unselect(IMultipleSelectionsItem item)
@@ -308,6 +318,7 @@ namespace General.WPF
             }
 
             mLastOperatedItem = item;
+            this.reportSelectedItemsChange();
         }
 
         public void ClearAllSelections()

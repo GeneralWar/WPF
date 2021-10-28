@@ -186,10 +186,6 @@ namespace General.WPF
                 }
                 this.State = IsSelected ? EditState.Selected : EditState.Normal;
             }
-            else if (e.Property == TextProperty)
-            {
-                Console.WriteLine();
-            }
         }
 
         protected void onLostFocus(object sender, RoutedEventArgs e)
