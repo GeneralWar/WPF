@@ -29,7 +29,7 @@ namespace General.WPF
 
         public bool IsEditable { get { return (bool)GetValue(IsEditableProperty); } set { SetValue(IsEditableProperty, value); } }
 
-        public UIElement? Label => (this.Template.FindName("TextBoard", this) as Border)?.Child as UIElement;
+        internal Border? Label => mTextBoard;
 
         private IMultipleSelectionsCollection? mCollection = null;
         private IMultipleSelectionsCollection Collection => mCollection ??= this.FindAncestor<IMultipleSelectionsCollection>() ?? throw new NullReferenceException();
@@ -92,34 +92,28 @@ namespace General.WPF
                 return;
             }
 
-            if (MouseButton.Left == e.ChangedButton)
+            if (!this.IsSelected || !(this as IMultipleSelectionsItem).IsOnlySelected())
             {
-                if (!this.IsSelected || !(this as IMultipleSelectionsItem).IsOnlySelected())
-                {
-                    this.Collection.Select(this);
-                }
+                this.Collection.Select(this);
                 return;
             }
-            else if (MouseButton.Right == e.ChangedButton)
-            {
-                return;
-            }
-
-            Trace.Assert(false, "Unexpected condition");
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
 
-            if (MouseButton.Left == e.ChangedButton && (this as IMultipleSelectionsItem).IsOnlySelected())
+            if (MouseButton.Left == e.ChangedButton)
             {
-                if (mCanEdit)
+                if ((this as IMultipleSelectionsItem).IsOnlySelected())
                 {
-                    this.Edit();
-                    e.Handled = true;
+                    if (mCanEdit)
+                    {
+                        this.Edit();
+                        e.Handled = true;
+                    }
+                    mCanEdit = false;
                 }
-                mCanEdit = false;
             }
         }
 
@@ -219,7 +213,7 @@ namespace General.WPF
             }
 
             FrameworkElement? currentFocused = FocusManager.GetFocusedElement(window) as FrameworkElement;
-            if (currentFocused is null || this.IsAncestorOf(currentFocused)) // it may be null when exiting the application
+            if (currentFocused is null || this == currentFocused) // it may be null when exiting the application
             {
                 return;
             }
