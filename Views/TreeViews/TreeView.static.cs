@@ -11,6 +11,7 @@ namespace General.WPF
     {
         public enum DragModes
         {
+            None,
             /// <summary>
             /// Drop source into target item
             /// </summary>
@@ -18,9 +19,26 @@ namespace General.WPF
             /// <summary>
             /// Insert source before or after target item
             /// </summary>
-            Insert = 2,
+            InsertFront = 2,
+            InsertBack = 4,
+
+            Insert = InsertFront | InsertBack,
 
             All = Drop | Insert,
+        }
+
+        public class DragEvent : UIChangingEvent
+        {
+            public object SourceItem { get; private set; }
+            public TreeViewItem TargetItem { get; private set; }
+            public DragModes Mode { get; private set; }
+
+            public DragEvent(object sourceItem, TreeViewItem targetItem, DragModes mode)
+            {
+                this.SourceItem = sourceItem;
+                this.TargetItem = targetItem;
+                this.Mode = mode;
+            }
         }
 
         private const double DRAG_EFFECT_RATE = .1;
@@ -30,6 +48,7 @@ namespace General.WPF
 
         static public DependencyProperty AllowItemDragProperty = DependencyProperty.Register(nameof(AllowItemDrag), typeof(bool), typeof(TreeView), new PropertyMetadata(true));
         static public DependencyProperty ItemDragModeProperty = DependencyProperty.Register(nameof(ItemDragMode), typeof(DragModes), typeof(TreeView), new PropertyMetadata(DragModes.All));
+        static public DependencyProperty InsertEffectRangeProperty = DependencyProperty.Register(nameof(InsertEffectRange), typeof(double), typeof(TreeView), new PropertyMetadata(DRAG_EFFECT_RATE));
 
         static TreeView()
         {
