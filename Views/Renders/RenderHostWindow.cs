@@ -5,7 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace General.WPF
 {
@@ -21,25 +23,35 @@ namespace General.WPF
             return new HandleRef(this, handle);
         }
 
-        protected override IntPtr WndProc(IntPtr windowHandle, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (this.Handle != windowHandle)
-            {
-                handled = false;
-                return IntPtr.Zero;
-            }
+        //protected override void OnRender(DrawingContext drawingContext)
+        //{
+        //    base.OnRender(drawingContext);
+        //}
 
-            handled = true;
-            switch (message)
-            {
-                case WM_SIZE:
-                    break;
-                default:
-                    handled = false;
-                    break;
-            }
-            return IntPtr.Zero;
-        }
+        //protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        //{
+        //    base.OnRenderSizeChanged(sizeInfo);
+        //}
+
+        //protected override IntPtr WndProc(IntPtr windowHandle, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        //{
+        //    if (this.Handle != windowHandle)
+        //    {
+        //        handled = false;
+        //        return IntPtr.Zero;
+        //    }
+
+        //    handled = true;
+        //    switch (message)
+        //    {
+        //        case WM_SIZE:
+        //            break;
+        //        default:
+        //            handled = false;
+        //            break;
+        //    }
+        //    return IntPtr.Zero;
+        //}
 
         protected override void DestroyWindowCore(HandleRef hwnd)
         {
