@@ -18,6 +18,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Samples\**" />
+    <EmbeddedResource Remove="Samples\**" />
+    <None Remove="Samples\**" />
+    <Page Remove="Samples\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
   </ItemGroup>
 

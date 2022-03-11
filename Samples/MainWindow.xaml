@@ -1,0 +1,30 @@
+﻿<Window x:Class="Samples.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:general="clr-namespace:General.WPF;assembly=General.WPF"
+        xmlns:local="clr-namespace:Samples"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="4*"/>
+        </Grid.ColumnDefinitions>
+
+        <general:TreeView>
+            <general:TreeViewItem Header="Item1">
+                <general:TreeViewItem Header="Item11">
+                    <general:TreeViewItem Header="Item111"></general:TreeViewItem>
+                    <general:TreeViewItem Header="Item112"></general:TreeViewItem>
+                </general:TreeViewItem>
+                <general:TreeViewItem Header="Item12"></general:TreeViewItem>
+                <general:TreeViewItem Header="Item13"></general:TreeViewItem>
+            </general:TreeViewItem>
+            <general:TreeViewItem Header="Item2"></general:TreeViewItem>
+            <general:TreeViewItem Header="Item3"></general:TreeViewItem>
+            <general:TreeViewItem Header="Item4"></general:TreeViewItem>
+        </general:TreeView>
+    </Grid>
+</Window>
