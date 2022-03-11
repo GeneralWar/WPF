@@ -2,6 +2,7 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,6 +16,17 @@ namespace General.WPF
     {
         static public DependencyProperty IsEditableProperty = DependencyProperty.Register(nameof(IsEditable), typeof(bool), typeof(TreeViewItem), new PropertyMetadata(true));
 
+        private class EditToken
+        {
+            private bool mIsCanceled = false;
+            public bool IsCanceled => mIsCanceled;
+
+            public void Cancel()
+            {
+                mIsCanceled = true;
+            }
+        }
+
         public delegate bool OnItemHeaderChange(TreeViewItem item, string oldName, string newName);
         public event OnItemHeaderChange? onItemHeaderChanging = null;
 
@@ -26,6 +38,7 @@ namespace General.WPF
 
         private bool mIsEditing = false;
         private bool mCanEdit = false;
+        private EditToken mCancelToken = new EditToken();
 
         public bool IsEditable { get { return (bool)GetValue(IsEditableProperty); } set { SetValue(IsEditableProperty, value); } }
 
@@ -78,8 +91,6 @@ namespace General.WPF
                 return;
             }
 
-            mCanEdit = (this as IMultipleSelectionsItem).IsOnlySelected();
-
             if (e.IsShiftDown())
             {
                 this.Collection.SelectTo(this);
@@ -97,30 +108,49 @@ namespace General.WPF
                 this.Collection.Select(this);
                 return;
             }
+
+            mCanEdit = true;
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
 
-            if (MouseButton.Left == e.ChangedButton)
+            if (!(this as IMultipleSelectionsItem).IsOnlySelected())
             {
-                if ((this as IMultipleSelectionsItem).IsOnlySelected())
+                return;
+            }
+
+            if (mCanEdit)
+            {
+                string header = this.Header as string ?? "";
+                Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnMouseUp)}: try to cancel edit of {header}");
+                mCancelToken.Cancel();
+
+                mCancelToken = new EditToken();
+                ThreadPool.QueueUserWorkItem(o =>
                 {
-                    if (mCanEdit)
+                    EditToken token = o as EditToken ?? throw new InvalidCastException();
+                    Thread.Sleep(500);
+
+                    if (!token.IsCanceled)
                     {
-                        this.Edit();
-                        e.Handled = true;
+                        Trace.WriteLine($"{nameof(TreeViewItem)}: try to edit {header}");
+                        this.Dispatcher.Invoke(this.Edit);
                     }
-                    mCanEdit = false;
-                }
+                }, mCancelToken);
+                e.Handled = true;
+                mCanEdit = false;
+                Trace.WriteLine($"{nameof(TreeViewItem)}: try to edit {header} after 500ms");
             }
         }
 
-        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+        protected override void OnPreviewMouseDoubleClick(MouseButtonEventArgs e)
         {
-            base.OnMouseDoubleClick(e);
+            e.Handled = true;
             mCanEdit = false;
+            mCancelToken.Cancel();
+            Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnPreviewMouseDoubleClick)}: try to cancel edit of {this.Header}");
         }
 
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)
@@ -234,6 +264,8 @@ namespace General.WPF
                 return;
             }
 
+            Trace.WriteLine($"{nameof(TreeViewItem)}: try to commit {this.Header}");
+
             TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
             if (inputBox is not null)
             {
@@ -273,6 +305,8 @@ namespace General.WPF
 
         private void Cancel()
         {
+            Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(Cancel)}: try to cancel edit of {this.Header}");
+
             TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
             if (inputBox is not null)
             {

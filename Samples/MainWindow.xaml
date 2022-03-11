@@ -10,10 +10,11 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <general:TreeView>
+        <general:TreeView AllowDrop="True" AllowItemDrag="True" ItemDragMode="All" InsertEffectRange="0.25">
             <general:TreeViewItem Header="Item1">
                 <general:TreeViewItem Header="Item11">
                     <general:TreeViewItem Header="Item111"></general:TreeViewItem>
@@ -26,5 +27,19 @@
             <general:TreeViewItem Header="Item3"></general:TreeViewItem>
             <general:TreeViewItem Header="Item4"></general:TreeViewItem>
         </general:TreeView>
+
+        <TreeView Grid.Column="2">
+            <TreeViewItem Header="Item1">
+                <TreeViewItem Header="Item11">
+                    <TreeViewItem Header="Item111"></TreeViewItem>
+                    <TreeViewItem Header="Item112"></TreeViewItem>
+                </TreeViewItem>
+                <TreeViewItem Header="Item12"></TreeViewItem>
+                <TreeViewItem Header="Item13"></TreeViewItem>
+            </TreeViewItem>
+            <TreeViewItem Header="Item2"></TreeViewItem>
+            <TreeViewItem Header="Item3"></TreeViewItem>
+            <TreeViewItem Header="Item4"></TreeViewItem>
+        </TreeView>
     </Grid>
 </Window>
