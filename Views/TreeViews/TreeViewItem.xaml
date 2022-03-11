@@ -119,13 +119,13 @@
                                 <Setter Property="Background" TargetName="TextBoard" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}"/>
                             </MultiTrigger>
-                            <MultiTrigger>
+                            <!--<MultiTrigger> this will affect parent when mouse is over a child item
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsSelected" Value="false"/>
                                     <Condition Property="IsMouseOver" Value="true"/>
                                 </MultiTrigger.Conditions>
                                 <Setter Property="Background" TargetName="TextBoard" Value="{StaticResource TreeViewItem.Backgroud.MouseOver}"/>
-                            </MultiTrigger>
+                            </MultiTrigger>-->
                             <Trigger Property="IsEnabled" Value="false">
                                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
                             </Trigger>

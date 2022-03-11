@@ -6,6 +6,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace General.WPF
 {
@@ -79,6 +80,35 @@ namespace General.WPF
         {
             base.OnVisualParentChanged(oldParent);
             mCollection = (this.Parent as IMultipleSelectionsCollection) ?? (this.Parent as IMultipleSelectionsItem)?.Collection;
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+
+            if (!this.IsFocused && mTextBoard is not null)
+            {
+                // TreeViewItem.Backgroud.MouseOver
+                TreeViewItem? element = this.InputHitTest(e.GetPosition(this))?.FindAncestor<TreeViewItem>();
+                if (this == element)
+                {
+                    mTextBoard.Background = this.Resources["TreeViewItem.Backgroud.MouseOver"] as SolidColorBrush;
+                }
+                else
+                {
+                    mTextBoard.Background = new SolidColorBrush(Colors.Transparent);
+                }
+            }
+        }
+
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            base.OnMouseLeave(e);
+
+            if (!this.IsFocused && mTextBoard is not null)
+            {
+                mTextBoard.Background = new SolidColorBrush(Colors.Transparent);
+            }
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
