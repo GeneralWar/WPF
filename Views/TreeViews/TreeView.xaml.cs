@@ -147,7 +147,8 @@ namespace General.WPF
         {
             base.OnDrop(e);
 
-            TreeViewItem? sourceItem, targetItem;
+            TreeViewItem? sourceItem;
+            ITreeViewItemCollection? targetItem;
             DragModes mode = this.checkDragMode(e, out sourceItem, out targetItem);
             if (DragModes.None == mode || targetItem is null || sourceItem is null)
             {
@@ -180,26 +181,26 @@ namespace General.WPF
             this.hideDragMask();
         }
 
-        private DragModes checkDragMode(DragEventArgs e, out TreeViewItem? sourceItem, out TreeViewItem? targetItem)
+        private DragModes checkDragMode(DragEventArgs e, out TreeViewItem? sourceItem, out ITreeViewItemCollection? targetItem)
         {
-            targetItem = this.InputHitTest(e.GetPosition(this))?.FindAncestor<TreeViewItem>();
+            sourceItem = e.Data.GetData(typeof(TreeViewItem)) as TreeViewItem;
+            targetItem = this.InputHitTest(e.GetPosition(this))?.FindAncestor<ITreeViewItemCollection>();
             if (targetItem is null)
             {
-                sourceItem = null;
                 return DragModes.None;
             }
 
-            sourceItem = e.Data.GetData(typeof(TreeViewItem)) as TreeViewItem;
+            Control target = targetItem as Control ?? throw new InvalidOperationException();
             if (sourceItem is not null)
             {
-                if (sourceItem == targetItem && sourceItem.Parent == targetItem || sourceItem.IsAncestorOf(targetItem))
+                if (sourceItem == targetItem && sourceItem.Parent == targetItem || sourceItem.IsAncestorOf(target))
                 {
                     return DragModes.None;
                 }
             }
 
-            Point position = e.GetPosition(targetItem);
-            double normalizedY = position.Y / targetItem.ActualHeight;
+            Point position = e.GetPosition(target);
+            double normalizedY = position.Y / target.ActualHeight;
             if (normalizedY < this.InsertEffectRange)
             {
                 if (this.ItemDragMode.HasFlag(DragModes.InsertFront))
@@ -227,7 +228,8 @@ namespace General.WPF
 
         private void showDragMask(DragEventArgs e)
         {
-            TreeViewItem? sourceItem, targetItem;
+            TreeViewItem? sourceItem;
+            ITreeViewItemCollection? targetItem;
             DragModes mode = this.checkDragMode(e, out sourceItem, out targetItem);
             if (DragModes.None == mode || targetItem is null)
             {
@@ -267,17 +269,18 @@ namespace General.WPF
             this.hideDragMask();
         }
 
-        private void showDragMask(TreeViewItem item, double normalizedPositionY, double normalizedHeight)
+        private void showDragMask(ITreeViewItemCollection item, double normalizedPositionY, double normalizedHeight)
         {
             Border? mask = mDragEffectMask;
             UIElement? maskParent = mask?.Parent as UIElement;
-            if (mask is null || maskParent is null)
+            if (mask is null || maskParent is null || item is not TreeViewItem)
             {
                 this.hideDragMask();
                 return;
             }
 
-            FrameworkElement source = item.Label as FrameworkElement ?? item;
+            TreeViewItem treeItem = item as TreeViewItem ?? throw new InvalidCastException();
+            FrameworkElement source = treeItem.Label as FrameworkElement ?? treeItem;
             Point tl = source.TranslatePoint(new Point(), maskParent);
             Point br = source.TranslatePoint(new Point(source.ActualWidth, source.ActualHeight), maskParent);
             double height = br.Y - tl.Y;

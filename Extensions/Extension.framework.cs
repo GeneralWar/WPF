@@ -61,7 +61,7 @@ namespace General.WPF
                 return parent as T;
             }
 
-            parent = parent?.Parent as FrameworkElement;
+            parent = parent?.GetRealParent();
             while (parent is not null && parent is not T && (parent = parent?.GetRealParent()) is not null) ;
             return parent as T;
         }
