@@ -34,6 +34,10 @@ namespace General.WPF
         /// </summary>
         public double InsertEffectRange { get { return (double)GetValue(InsertEffectRangeProperty); } set { SetValue(InsertEffectRangeProperty, value); } }
 
+        ITreeViewItemCollection? ITreeViewItemCollection.Parent => this.Parent as ITreeViewItemCollection;
+
+        int ITreeViewItemCollection.SiblingIndex => -1;
+
         public delegate void OnDragEventDelegate(DragEvent e);
         public event OnDragEventDelegate? onDragOver = null;
         public event OnDragEventDelegate? onDrop = null;

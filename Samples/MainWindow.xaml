@@ -14,7 +14,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <general:TreeView AllowDrop="True" AllowItemDrag="True" ItemDragMode="All" InsertEffectRange="0.25">
+        <general:TreeView x:Name="mTreeView" AllowDrop="True" AllowItemDrag="True" ItemDragMode="All" InsertEffectRange="0.25">
             <general:TreeViewItem Header="Item1">
                 <general:TreeViewItem Header="Item11">
                     <general:TreeViewItem Header="Item111"></general:TreeViewItem>

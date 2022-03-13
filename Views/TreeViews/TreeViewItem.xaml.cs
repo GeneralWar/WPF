@@ -49,6 +49,10 @@ namespace General.WPF
         private IMultipleSelectionsCollection Collection => mCollection ??= this.FindAncestor<IMultipleSelectionsCollection>() ?? throw new NullReferenceException();
         IMultipleSelectionsCollection IMultipleSelectionsItem.Collection => this.Collection;
 
+        ITreeViewItemCollection? ITreeViewItemCollection.Parent => this.Parent as ITreeViewItemCollection;
+
+        int ITreeViewItemCollection.SiblingIndex => this.GetSiblingIndex();
+
         private string mHeader = "";
 
         public TreeViewItem()
@@ -82,21 +86,58 @@ namespace General.WPF
             mCollection = (this.Parent as IMultipleSelectionsCollection) ?? (this.Parent as IMultipleSelectionsItem)?.Collection;
         }
 
+        private void updateDisplayColor()
+        {
+            if (mTextBoard is null)
+            {
+                return;
+            }
+
+            SolidColorBrush background = new SolidColorBrush(Colors.Transparent);
+            SolidColorBrush foreground = new SolidColorBrush(Colors.Transparent);
+            if (this.IsSelected)
+            {
+                if (this.IsFocused)
+                {
+                    background = SystemColors.HighlightBrush;
+                    foreground = SystemColors.HighlightTextBrush;
+                }
+                else
+                {
+                    background = SystemColors.InactiveSelectionHighlightBrush;
+                    foreground = SystemColors.InactiveSelectionHighlightTextBrush;
+                }
+            }
+            else
+            {
+                foreground = SystemColors.ControlTextBrush;
+            }
+
+            mTextBoard.Background = background;
+            this.Foreground = foreground;
+        }
+
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
 
-            if (!this.IsFocused && mTextBoard is not null)
+            if (mTextBoard is not null)
             {
-                // TreeViewItem.Backgroud.MouseOver
-                TreeViewItem? element = this.InputHitTest(e.GetPosition(this))?.FindAncestor<TreeViewItem>();
-                if (this == element)
+                if (this.IsFocused)
                 {
-                    mTextBoard.Background = this.Resources["TreeViewItem.Backgroud.MouseOver"] as SolidColorBrush;
+                    this.updateDisplayColor();
                 }
                 else
                 {
-                    mTextBoard.Background = new SolidColorBrush(Colors.Transparent);
+                    TreeViewItem? element = this.InputHitTest(e.GetPosition(this))?.FindAncestor<TreeViewItem>();
+                    if (this == element)
+                    {
+                        mTextBoard.Background = this.Resources["TreeViewItem.Backgroud.MouseOver"] as SolidColorBrush;
+                    }
+                    else
+                    {
+                        mTextBoard.Background = new SolidColorBrush(Colors.Transparent);
+                    }
                 }
             }
         }
@@ -181,6 +222,18 @@ namespace General.WPF
             mCanEdit = false;
             mCancelToken.Cancel();
             Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnPreviewMouseDoubleClick)}: try to cancel edit of {this.Header}");
+        }
+
+        protected override void OnGotFocus(RoutedEventArgs e)
+        {
+            base.OnGotFocus(e);
+            this.updateDisplayColor();
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            base.OnLostFocus(e);
+            this.updateDisplayColor();
         }
 
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)

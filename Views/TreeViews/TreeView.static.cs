@@ -7,7 +7,7 @@ namespace General.WPF
     /// <summary>
     /// TreeView.xaml 的交互逻辑
     /// </summary>
-    public partial class TreeView : System.Windows.Controls.TreeView, ITreeViewItemCollection, IMultipleSelectionsCollection
+    public partial class TreeView 
     {
         public enum DragModes
         {

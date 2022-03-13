@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using General.WPF;
+using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using static General.WPF.TreeView;
 
 namespace Samples
 {
@@ -23,6 +13,33 @@ namespace Samples
         public MainWindow()
         {
             InitializeComponent();
+
+            mTreeView.onDrop += onTreeViewDrop;
+        }
+
+        private void onTreeViewDrop(General.WPF.TreeView.DragEvent e)
+        {
+            TreeViewItem? sourceItem = e.SourceItem as TreeViewItem;
+            ITreeViewItemCollection targetItem = e.TargetItem;
+            if (sourceItem is null)
+            {
+                return;
+            }
+
+            sourceItem.RemoveFromParent();
+
+            if (DragModes.Drop == e.Mode)
+            {
+                targetItem.Items.Add(sourceItem);
+            }
+            else if (DragModes.InsertFront == e.Mode)
+            {
+                targetItem.Parent?.Items.Insert(targetItem.SiblingIndex, sourceItem);
+            }
+            else if (DragModes.InsertBack == e.Mode)
+            {
+                targetItem.Parent?.Items.Insert(targetItem.SiblingIndex + 1, sourceItem);
+            }
         }
     }
 }

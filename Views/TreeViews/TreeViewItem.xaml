@@ -103,22 +103,22 @@
                             <Trigger Property="HasItems" Value="false">
                                 <Setter Property="Visibility" TargetName="Expander" Value="Hidden"/>
                             </Trigger>
-                            <Trigger Property="IsSelected" Value="true">
+                            <!--<Trigger Property="IsSelected" Value="true">
                                 <Setter Property="Background" TargetName="TextBoard" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="false">
                                 <Setter Property="Background" TargetName="TextBoard" Value="Transparent"/>
                                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-                            </Trigger>
-                            <MultiTrigger>
+                            </Trigger>-->
+                            <!--<MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsSelected" Value="true"/>
                                     <Condition Property="IsSelectionActive" Value="false"/>
                                 </MultiTrigger.Conditions>
                                 <Setter Property="Background" TargetName="TextBoard" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}"/>
-                            </MultiTrigger>
+                            </MultiTrigger>-->
                             <!--<MultiTrigger> this will affect parent when mouse is over a child item
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsSelected" Value="false"/>
