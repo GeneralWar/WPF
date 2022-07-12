@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\General.CSharp\General\General.core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Views\Renders\RenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
