@@ -1,4 +1,4 @@
-﻿namespace General
+﻿namespace General.WPF
 {
     public class UIChangingEvent
     {
