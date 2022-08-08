@@ -1,11 +1,9 @@
 ﻿using General.Jsons;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms;
 
 namespace General.WPF
 {
@@ -14,7 +12,8 @@ namespace General.WPF
     /// </summary>
     public class WindowLocationCache : HelperCache
     {
-        public override string CachePath => Path.Join(base.CachePath, this.Window.GetType().Name + ".json");
+        private string? mRelativePath = null;
+        public override string CachePath => string.IsNullOrWhiteSpace(mRelativePath) ? Path.Join(base.CachePath, this.Window.GetType().Name + ".json") : Path.Join(base.CachePath, mRelativePath, this.Window.GetType().Name + ".json");
 
         public Window Window { get; private set; }
 
@@ -23,14 +22,21 @@ namespace General.WPF
         [DataField] public int Width { get; private set; }
         [DataField] public int Height { get; private set; }
 
-        private WindowLocationCache(Window window)
+        private WindowLocationCache(Window window) : this(window, null) { }
+
+        private WindowLocationCache(Window window, string? relativePath)
         {
+            mRelativePath = relativePath;
+
             this.Window = window;
             window.Initialized += this.onInitialized;
+            window.Activated += this.onShow;
             window.Closing += this.onClosing;
+
+            this.restore();
         }
 
-        private void onInitialized(object? sender, EventArgs e)
+        private void restore()
         {
             byte[]? data = this.readFromCache();
             if (data is null)
@@ -39,10 +45,40 @@ namespace General.WPF
             }
 
             Json.Parse(Encoding.UTF8.GetString(data))?.Deserialize(this);
-            this.Window.Left = this.LocationX;
-            this.Window.Top = this.LocationY;
-            this.Window.Width = this.Width;
-            this.Window.Height = this.Height;
+        }
+
+        private void onInitialized(object? sender, EventArgs e)
+        {
+            int totalWidth = 0, totalHeight = 0;
+            Screen[] screens = Screen.AllScreens;
+            foreach (Screen screen in screens)
+            {
+                totalWidth += screen.Bounds.Width;
+                totalHeight += screen.Bounds.Height;
+            }
+
+            if (this.LocationX > -this.Width && this.LocationX < totalWidth)
+            {
+                this.Window.Left = this.LocationX;
+            }
+            if (this.LocationY >= 0 && this.LocationY < totalHeight)
+            {
+                this.Window.Top = this.LocationY;
+            }
+            if (this.Width > 0)
+            {
+                this.Window.Width = this.Width;
+            }
+            if (this.Height > 0)
+            {
+                this.Window.Height = this.Height;
+            }
+        }
+
+        private void onShow(object? sender, EventArgs e)
+        {
+            this.Window.Activated -= this.onShow;
+            this.onInitialized(sender, e);
         }
 
         private void onClosing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -54,9 +90,21 @@ namespace General.WPF
             this.writeToCache(Encoding.UTF8.GetBytes(Json.ToJson(this)));
         }
 
+        /// <summary>
+        /// Will load cache (if exists) and save cache to the predetermined path.
+        /// </summary>
         static public void Register(Window window)
         {
             new WindowLocationCache(window);
+        }
+
+        /// <summary>
+        /// Will load cache (if exists) and save cache to the relativePath under the predetermined path.
+        /// </summary>
+        /// <param name="relativePath">relativePath under the predetermined path, the final path will be "{PATH}/{relativePath}/..."</param>
+        static public void Register(Window window, string relativePath)
+        {
+            new WindowLocationCache(window, relativePath);
         }
     }
 }

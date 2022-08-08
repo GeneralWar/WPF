@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x64</Platforms>
     <Nullable>enable</Nullable>
+    <UseWindowsForms>True</UseWindowsForms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -33,6 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Controls\Inputs\PercentInputBox.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\Renders\RenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -42,6 +46,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="Controls\Inputs\PercentInputBox.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="Views\Renders\RenderView.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>

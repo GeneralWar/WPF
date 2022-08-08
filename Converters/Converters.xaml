@@ -2,6 +2,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:General.WPF">
     <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
+    <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
+    <!--boolean to Visibility-->
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
     <local:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter"/>
+    <!--float to string-->
+    <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
 </ResourceDictionary>
