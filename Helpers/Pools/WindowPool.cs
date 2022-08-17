@@ -31,6 +31,13 @@ namespace General.WPF
             return window;
         }
 
+        static public T Register<T>(Func<T> creator) where T : Window
+        {
+            T window = creator.Invoke();
+            Register(window);
+            return window;
+        }
+
         static public T? Get<T>() where T : Window
         {
             Window? window;

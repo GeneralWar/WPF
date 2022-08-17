@@ -8,4 +8,5 @@
     <local:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter"/>
     <!--float to string-->
     <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
+    <local:DecimalToStringConverter x:Key="DecimalToStringConverter"/>
 </ResourceDictionary>

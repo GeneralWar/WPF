@@ -7,14 +7,14 @@ namespace General.WPF
     /// <summary>
     /// Hyperlink.xaml 的交互逻辑
     /// </summary>
-    public partial class Hyperlink : Label
+    public partial class LinkLabel : Label
     {
-        static private DependencyProperty PROPERTY_TEXT = DependencyProperty.Register(nameof(Hyperlink.Text), typeof(string), typeof(Hyperlink));
-        public string Text { get => this.GetValue(PROPERTY_TEXT) as string ?? ""; set => this.SetValue(PROPERTY_TEXT, value); }
+        static public readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(LinkLabel.Text), typeof(string), typeof(LinkLabel));
+        public string Text { get => this.GetValue(TextProperty) as string ?? ""; set => this.SetValue(TextProperty, value); }
 
         public event RoutedEventHandler? Click = null;
 
-        public Hyperlink()
+        public LinkLabel()
         {
             InitializeComponent();
         }
