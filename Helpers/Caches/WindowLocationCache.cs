@@ -81,7 +81,7 @@ namespace General.WPF
             this.onInitialized(sender, e);
         }
 
-        private void onClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void onClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             this.LocationX = (int)this.Window.Left;
             this.LocationY = (int)this.Window.Top;
