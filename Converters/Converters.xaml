@@ -5,8 +5,16 @@
     <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
     <!--boolean to Visibility-->
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
+    <local:InverseBooleanToVisibilityCollapsedConverter x:Key="InverseBooleanToVisibilityCollapsedConverter"/>
     <local:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter"/>
+    <local:InverseBooleanToVisibilityHiddenConverter x:Key="InverseBooleanToVisibilityHiddenConverter"/>
+    <!--number to Visibility-->
+    <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
     <!--float to string-->
     <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
     <local:DecimalToStringConverter x:Key="DecimalToStringConverter"/>
+    <!--number to boolean-->
+    <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
+    <!--selection to enable-->
+    <local:IListSelectionToEnableConverter x:Key="IListSelectionToEnableConverter"/>
 </ResourceDictionary>

@@ -1,22 +1,21 @@
 ﻿using System;
+using System.Collections;
 using System.Globalization;
-using System.Reflection;
 using System.Windows.Data;
 
 namespace General.WPF
 {
-    public class DecimalToStringConverter : IValueConverter
+    public class IListSelectionToEnableConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return ((decimal)value).ToString(parameter as string);
+            IList? list = value as IList;
+            return list is not null && 0 != list.Count;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            decimal number;
-            decimal.TryParse(value as string, out number);
-            return number;
+            throw new NotImplementedException();
         }
     }
 }

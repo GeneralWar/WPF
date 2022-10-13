@@ -1,22 +1,19 @@
 ﻿using System;
 using System.Globalization;
-using System.Reflection;
 using System.Windows.Data;
 
 namespace General.WPF
 {
-    public class DecimalToStringConverter : IValueConverter
+    public class IntegerToBooleanConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return ((decimal)value).ToString(parameter as string);
+            return value is int && 0 != (int)value;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            decimal number;
-            decimal.TryParse(value as string, out number);
-            return number;
+            throw new NotImplementedException();
         }
     }
 }

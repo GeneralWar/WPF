@@ -9,7 +9,8 @@ namespace General.WPF
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            bool visible = value is bool ? (bool)value : false;
+            object final = value ?? parameter;
+            bool visible = final is bool ? (bool)final : false;
             return visible ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -23,11 +24,27 @@ namespace General.WPF
         }
     }
 
+    public class InverseBooleanToVisibilityCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            object final = value ?? parameter;
+            bool invisible = final is bool ? (bool)final : true;
+            return invisible ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class BooleanToVisibilityHiddenConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            bool visible = value is bool ? (bool)value : false;
+            object final = value ?? parameter;
+            bool visible = final is bool ? (bool)final : false;
             return visible ? Visibility.Visible : Visibility.Hidden;
         }
 
@@ -38,6 +55,21 @@ namespace General.WPF
                 return false;
             }
             return Visibility.Visible == (Visibility)value ? true : false;
+        }
+    }
+
+    public class InverseBooleanToVisibilityHiddenConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            object final = value ?? parameter;
+            bool invisible = final is bool ? (bool)final : true;
+            return invisible ? Visibility.Hidden : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }
