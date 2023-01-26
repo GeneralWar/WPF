@@ -20,9 +20,13 @@
 
   <ItemGroup>
     <Compile Remove="Samples\**" />
+    <Compile Remove="Test\**" />
     <EmbeddedResource Remove="Samples\**" />
+    <EmbeddedResource Remove="Test\**" />
     <None Remove="Samples\**" />
+    <None Remove="Test\**" />
     <Page Remove="Samples\**" />
+    <Page Remove="Test\**" />
   </ItemGroup>
 
   <ItemGroup>

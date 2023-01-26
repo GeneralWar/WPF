@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TreeView": {
+      "commandName": "Project",
+      "commandLineArgs": "--test TreeView"
+    }
+  }
+}

@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,6 +22,8 @@ namespace General.WPF
 
         public Brush InactiveSelectionBackground { get; set; } = new SolidColorBrush(Color.FromArgb(128, 144, 144, 144));
 
+        IEnumerable<IMultipleSelectionsItem> IMultipleSelectionsCollection.Items => this.Items.OfType<IMultipleSelectionsItem>();
+
         private HashSet<IMultipleSelectionsItem> mSelectedItems = new HashSet<IMultipleSelectionsItem>();
         IEnumerable<IMultipleSelectionsItem> IMultipleSelectionsCollection.SelectedItems => mSelectedItems;
         public IEnumerable<TreeViewItem> SelectedItems => mSelectedItems.Where(i => i is TreeViewItem).Cast<TreeViewItem>().ToArray();
@@ -36,6 +40,8 @@ namespace General.WPF
 
         ITreeViewItemCollection? ITreeViewItemCollection.Parent => this.Parent as ITreeViewItemCollection;
 
+        public IMultipleSelectionsItem? LastSelected { get; private set; }
+
         int ITreeViewItemCollection.SiblingIndex => -1;
 
         public delegate void OnDragEventDelegate(DragEvent e);
@@ -44,6 +50,8 @@ namespace General.WPF
 
         private bool mDragCancel = false;
         private Border? mDragEffectMask = null;
+
+        private bool mIsAppending = false;
 
         public TreeView()
         {
@@ -340,6 +348,7 @@ namespace General.WPF
             if (selectable is not null && selectable.IsSelected)
             {
                 mSelectedItems.Add(selectable);
+                this.LastSelected = selectable;
             }
         }
 
@@ -360,57 +369,123 @@ namespace General.WPF
             return path.ToArray();
         }
 
+        private bool checkShouldSwitchDirection(IMultipleSelectionsItem from, IMultipleSelectionsItem to)
+        {
+            if (from == to)
+            {
+                return false;
+            }
+
+            string fromID = this.getPathID(from);
+            string toID = this.getPathID(to);
+            return string.Compare(fromID, toID) > 0;
+        }
+
         private void selectItems(IMultipleSelectionsItem from, IMultipleSelectionsItem to)
+        {
+            this.append(from, false);
+
+            if (from == to)
+            {
+                return;
+            }
+
+            if (this.checkShouldSwitchDirection(from, to))
+            {
+                this.selectItems(to, from);
+                return;
+            }
+
+            if (from.Parent == to.Parent)
+            {
+                IEnumerator? enumerator = from.Parent.GetEnumerator();
+                if (enumerator is null)
+                {
+                    return;
+                }
+
+                while (enumerator.MoveNext() && enumerator.Current != from) ;
+                this.append(from, true);
+
+                while (enumerator.MoveNext() && enumerator.Current != to)
+                {
+                    IMultipleSelectionsItem? i = enumerator.Current as IMultipleSelectionsItem;
+                    if (i is not null)
+                    {
+                        this.append(i, true);
+                    }
+                }
+                this.append(to, false);
+            }
+            else
+            {
+                this.enumerateTo(from, to, i => this.append(i, false));
+            }
+
+            mLastOperatedItem = to;
+        }
+
+        private void enumerateTo(IMultipleSelectionsItem from, IMultipleSelectionsItem to, Action<IMultipleSelectionsItem>? handler)
         {
             if (from == to)
             {
                 return;
             }
 
-            TreeViewItem[] fromPath = this.getItemPath(from as TreeViewItem);
-            TreeViewItem[] toPath = this.getItemPath(to as TreeViewItem);
-
-            int forkDepth = 0;
-            ItemCollection forkCollection = this.Items;
-            int shallow = Math.Min(fromPath.Length, toPath.Length);
-            for (int i = 0; i < shallow; ++i, ++forkDepth)
+            IEnumerator? enumerator = from.Parent.GetEnumerator();
+            if (enumerator is null)
             {
-                if (fromPath[i] != toPath[i])
-                {
-                    break;
-                }
-                forkCollection = fromPath[i].Items;
+                return;
             }
 
-            int fromIndex = forkCollection.IndexOf(fromPath[forkDepth]);
-            int toIndex = forkCollection.IndexOf(toPath[forkDepth]);
-            int minIndex = Math.Min(fromIndex, toIndex);
-            int maxIndex = Math.Max(fromIndex, toIndex);
-            List<IMultipleSelectionsItem> items = new List<IMultipleSelectionsItem>();
-            for (int i = minIndex; i <= maxIndex; ++i)
+            while (enumerator.MoveNext() && enumerator.Current != from) ;
+            if (this.enumerateTo(enumerator, to, handler))
             {
-                TreeViewItem? item = forkCollection[i] as TreeViewItem;
-                if (item is null)
-                {
-                    continue;
-                }
-                this.enumerateItems(item, items);
+                return;
             }
 
-            fromIndex = items.IndexOf(from);
-            toIndex = items.IndexOf(to);
-            minIndex = Math.Min(fromIndex, toIndex);
-            maxIndex = Math.Max(fromIndex, toIndex);
-
-            if (maxIndex > minIndex)
+            IMultipleSelectionsItem? fromParent = from.Parent as IMultipleSelectionsItem;
+            if (fromParent is not null)
             {
-                foreach (IMultipleSelectionsItem item in items.Skip(minIndex).Take(maxIndex - minIndex + 1))
-                {
-                    (this as IMultipleSelectionsCollection).Append(item);
-                }
-                this.reportSelectedItemsChange();
+                this.enumerateTo(fromParent, to, handler);
             }
-            mLastOperatedItem = to;
+        }
+
+        private bool enumerateTo(IEnumerator enumerator, IMultipleSelectionsItem to, Action<IMultipleSelectionsItem>? handler)
+        {
+            bool move;
+            while ((move = enumerator.MoveNext()) && enumerator.Current != to)
+            {
+                IMultipleSelectionsItem? i = enumerator.Current as IMultipleSelectionsItem;
+                if (i is not null)
+                {
+                    handler?.Invoke(i);
+                }
+
+                IEnumerator? childEnumerator = (i as DependencyObject)?.GetEnumerator();
+                if (childEnumerator is not null && this.enumerateTo(childEnumerator, to, handler))
+                {
+                    return true;
+                }
+            }
+            if (move && enumerator.Current == to)
+            {
+                handler?.Invoke(to);
+                return true;
+            }
+            return false;
+        }
+
+        private string getPathID(IMultipleSelectionsItem item)
+        {
+            StringBuilder builder = new StringBuilder();
+            FrameworkElement? element = item as FrameworkElement;
+            while (element is not null && this != element)
+            {
+                builder.Append(element.GetSiblingIndex());
+                element = element.Parent as FrameworkElement;
+            }
+            return builder.ToString().Reverse();
         }
 
         private void enumerateItems(TreeViewItem root, List<IMultipleSelectionsItem> items)
@@ -482,6 +557,16 @@ namespace General.WPF
 
         void IMultipleSelectionsCollection.Select(IMultipleSelectionsItem item)
         {
+            if (mIsAppending)
+            {
+                return;
+            }
+
+            if (1 == mSelectedItems.Count && mSelectedItems.First() == item)
+            {
+                return;
+            }
+
             foreach (IMultipleSelectionsItem record in mSelectedItems)
             {
                 if (record == item)
@@ -498,28 +583,58 @@ namespace General.WPF
 
         void IMultipleSelectionsCollection.SelectTo(IMultipleSelectionsItem item)
         {
-            if (mLastOperatedItem == item)
+            if (this.LastSelected == item)
             {
                 return;
             }
 
-            if (mLastOperatedItem is not null)
+            if (this.LastSelected is not null)
             {
-                this.selectItems(mLastOperatedItem, item);
+                this.selectItems(this.LastSelected, item);
             }
         }
 
         void IMultipleSelectionsCollection.Append(IMultipleSelectionsItem item)
         {
+            this.append(item, false);
+        }
+
+        private void append(IMultipleSelectionsItem item, bool recursively)
+        {
+            mIsAppending = true;
             mSelectedItems.Add(item);
-            item.IsSelected = true;
+            this.LastSelected = item;
             (item as FrameworkElement)?.Focus();
             mLastOperatedItem = item;
+            item.IsSelected = true;
             this.reportSelectedItemsChange();
+            mIsAppending = false;
+
+            if (recursively)
+            {
+                DependencyObject? parent = item as DependencyObject;
+                if (parent is not null)
+                {
+                    IEnumerator? enumerator = parent.GetEnumerator();
+                    while (enumerator is not null && enumerator.MoveNext())
+                    {
+                        IMultipleSelectionsItem? child = enumerator.Current as IMultipleSelectionsItem;
+                        if (child is not null)
+                        {
+                            this.append(child, recursively);
+                        }
+                    }
+                }
+            }
         }
 
         void IMultipleSelectionsCollection.Unselect(IMultipleSelectionsItem item)
         {
+            if (mIsAppending)
+            {
+                return;
+            }
+
             mSelectedItems.Remove(item);
             item.IsSelected = false;
             if (this.SelectedItem == item)
@@ -528,6 +643,11 @@ namespace General.WPF
             }
 
             mLastOperatedItem = item;
+            if (this.LastSelected == item)
+            {
+                this.LastSelected = null;
+            }
+
             this.reportSelectedItemsChange();
         }
 
@@ -546,6 +666,34 @@ namespace General.WPF
         void IMultipleSelectionsCollection.ClearAllSelections()
         {
             this.ClearAllSelections();
+        }
+
+        public void ExpandAll()
+        {
+            this.expandAll(this.Items);
+        }
+
+        private void expandAll(ItemCollection items)
+        {
+            foreach (System.Windows.Controls.TreeViewItem item in items.OfType<System.Windows.Controls.TreeViewItem>())
+            {
+                item.IsExpanded = true;
+                this.expandAll(item.Items);
+            }
+        }
+
+        public void CollapseAll()
+        {
+            this.collapseAll(this.Items);
+        }
+
+        private void collapseAll(ItemCollection items)
+        {
+            foreach (System.Windows.Controls.TreeViewItem item in items.OfType<System.Windows.Controls.TreeViewItem>())
+            {
+                item.IsExpanded = false;
+                this.expandAll(item.Items);
+            }
         }
     }
 }

@@ -35,6 +35,7 @@ namespace General.WPF
         public event OnItemsChange? onItemsChange = null;
 
         private Border? mTextBoard = null;
+        private Brush? mTextBoardBackground = null;
         private Border? mInputBoard = null;
 
         private bool mIsEditing = false;
@@ -52,6 +53,7 @@ namespace General.WPF
         ITreeViewItemCollection? ITreeViewItemCollection.Parent => this.Parent as ITreeViewItemCollection;
 
         int ITreeViewItemCollection.SiblingIndex => this.GetSiblingIndex();
+        int IMultipleSelectionsItem.SiblingIndex => this.GetSiblingIndex();
 
         private string mHeader = "";
 
@@ -66,6 +68,10 @@ namespace General.WPF
         {
             mTextBoard ??= this.Template.FindName("TextBoard", this) as Border;
             mInputBoard ??= this.Template.FindName("InputBoard", this) as Border;
+            if (mTextBoardBackground is not null)
+            {
+                this.updateBackgroudColor(mTextBoardBackground);
+            }
         }
 
         //public bool IsHeaderArea(IInputElement element)
@@ -86,77 +92,28 @@ namespace General.WPF
             mCollection = (this.Parent as IMultipleSelectionsCollection) ?? (this.Parent as IMultipleSelectionsItem)?.Collection;
         }
 
-        private void updateDisplayColor()
-        {
-            if (mTextBoard is null)
-            {
-                return;
-            }
-
-            SolidColorBrush background = new SolidColorBrush(Colors.Transparent);
-            SolidColorBrush foreground = new SolidColorBrush(Colors.Transparent);
-            if (this.IsSelected)
-            {
-                if (this.IsFocused)
-                {
-                    background = SystemColors.HighlightBrush;
-                    foreground = SystemColors.HighlightTextBrush;
-                }
-                else
-                {
-                    background = SystemColors.InactiveSelectionHighlightBrush;
-                    foreground = SystemColors.InactiveSelectionHighlightTextBrush;
-                }
-            }
-            else
-            {
-                foreground = SystemColors.ControlTextBrush;
-            }
-
-            mTextBoard.Background = background;
-            this.Foreground = foreground;
-        }
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-
-            if (mTextBoard is not null)
-            {
-                if (this.IsFocused)
-                {
-                    this.updateDisplayColor();
-                }
-                else
-                {
-                    TreeViewItem? element = this.InputHitTest(e.GetPosition(this))?.FindAncestor<TreeViewItem>();
-                    if (this == element)
-                    {
-                        mTextBoard.Background = this.Resources["TreeViewItem.Backgroud.MouseOver"] as SolidColorBrush;
-                    }
-                    else
-                    {
-                        mTextBoard.Background = new SolidColorBrush(Colors.Transparent);
-                    }
-                }
-            }
+            this.updateColor();
         }
 
         protected override void OnMouseLeave(MouseEventArgs e)
         {
             base.OnMouseLeave(e);
-
-            if (!this.IsFocused && mTextBoard is not null)
-            {
-                mTextBoard.Background = new SolidColorBrush(Colors.Transparent);
-            }
+            this.updateColor();
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             base.OnMouseDown(e);
 
-            TreeViewItem? item = (e.Source as FrameworkElement)?.FindAncestor<TreeViewItem>();
+            if (MouseButton.Left != e.ChangedButton)
+            {
+                return;
+            }
+
+            TreeViewItem ? item = (e.Source as FrameworkElement)?.FindAncestor<TreeViewItem>();
             if (this != item)
             {
                 return;
@@ -187,7 +144,7 @@ namespace General.WPF
         {
             base.OnMouseUp(e);
 
-            if (!(this as IMultipleSelectionsItem).IsOnlySelected())
+            if (MouseButton.Left != e.ChangedButton || !(this as IMultipleSelectionsItem).IsOnlySelected())
             {
                 return;
             }
@@ -218,22 +175,15 @@ namespace General.WPF
 
         protected override void OnPreviewMouseDoubleClick(MouseButtonEventArgs e)
         {
+            if (MouseButton.Left != e.ChangedButton)
+            {
+                return;
+            }
+
             e.Handled = true;
             mCanEdit = false;
             mCancelToken.Cancel();
             Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnPreviewMouseDoubleClick)}: try to cancel edit of {this.Header}");
-        }
-
-        protected override void OnGotFocus(RoutedEventArgs e)
-        {
-            base.OnGotFocus(e);
-            this.updateDisplayColor();
-        }
-
-        protected override void OnLostFocus(RoutedEventArgs e)
-        {
-            base.OnLostFocus(e);
-            this.updateDisplayColor();
         }
 
         private void onInputBoxKeyDown(object sender, KeyEventArgs e)
@@ -413,27 +363,91 @@ namespace General.WPF
 
             if (e.Property == IsSelectedProperty)
             {
-                this.Select((bool)e.NewValue);
+                if ((bool)e.NewValue)
+                {
+                    this.Select(false);
+                }
+                else
+                {
+                    this.Collection.Unselect(this);
+                }
+            }
+
+            if (e.Property == IsSelectedProperty || e.Property == IsSelectionActiveProperty || e.Property == IsMouseOverProperty || e.Property == IsEnabledProperty)
+            {
+                this.updateColor();
             }
         }
 
-        private void Select(bool isSelected)
+        /// <summary>
+        /// Select the item
+        /// </summary>
+        /// <param name="append">Determine if clear previous selections (Only selection or multiple selections)</param>
+        public void Select(bool append)
         {
-            if (isSelected)
+            if (append)
             {
-                if (!this.Collection.SelectedItems.Contains(this))
+                this.Collection.Append(this);
+            }
+            else
+            {
+                this.Collection.Select(this);
+            }
+        }
+
+        private void updateBackgroudColor(Brush brush)
+        {
+            mTextBoardBackground = brush;
+            if (mTextBoard is not null)
+            {
+                mTextBoard.Background = brush;
+            }
+        }
+
+        private void updateForegroundColor(Brush brush)
+        {
+            this.Foreground = brush;
+        }
+
+        private void updateColor()
+        {
+            if (this.IsSelected)
+            {
+                if (this.IsSelectionActive)
                 {
-                    this.Collection.Append(this);
+                    this.updateBackgroudColor(SystemColors.HighlightBrush);
+                    this.updateForegroundColor(SystemColors.HighlightTextBrush);
+                }
+                else
+                {
+                    this.updateBackgroudColor(SystemColors.InactiveSelectionHighlightBrush);
+                    this.updateForegroundColor(SystemColors.InactiveSelectionHighlightTextBrush);
+                }
+                return;
+            }
+
+            if (!this.IsEnabled)
+            {
+                this.updateForegroundColor(SystemColors.GrayTextBrush);
+                return;
+            }
+
+            if (this.IsMouseOver) // IsMouseDirectlyOver is weird
+            {
+                if (this == Mouse.DirectlyOver || this == Mouse.DirectlyOver.FindAncestor<TreeViewItem>())
+                {
+                    this.updateBackgroudColor(this.Resources["TreeViewItem.Backgroud.MouseOver"] as SolidColorBrush ?? SystemColors.InactiveSelectionHighlightBrush);
+                    return;
                 }
             }
-            //else
-            //{
-            //    this.Collection.Unselect(this);
-            //    if (mIsEditing)
-            //    {
-            //        this.Commit();
-            //    }
-            //}
+
+            this.updateBackgroudColor(Brushes.Transparent);
+            this.updateForegroundColor(SystemColors.ControlTextBrush);
+        }
+
+        public override string ToString()
+        {
+            return $"{this.GetType().FullName} {this.Header}, Items.Count:{this.Items.Count}";
         }
     }
 }

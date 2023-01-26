@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -106,5 +107,73 @@ static public partial class Extension
             ++index;
         }
         add.Invoke(item);
+    }
+
+    static public int GetSiblingIndex(this FrameworkElement element)
+    {
+        ItemsControl? items = element.Parent as ItemsControl;
+        if (items is not null)
+        {
+            return items.Items.IndexOf(element);
+        }
+
+        Panel? panel = element.Parent as Panel;
+        if (panel is not null)
+        {
+            return panel.Children.IndexOf(element);
+        }
+
+        throw new NotImplementedException();
+    }
+
+    static public T? GetFirstChild<T>(this DependencyObject instance) where T : class
+    {
+        ItemsControl? items = instance as ItemsControl;
+        if (items is not null)
+        {
+            return items.Items.Find<T>(i => i is T);
+        }
+
+        Panel? panel = instance as Panel;
+        if (panel is not null)
+        {
+            return panel.Children.Find<T>(i => i is T);
+        }
+
+        throw new NotImplementedException();
+    }
+
+    static public T? GetLastChild<T>(this DependencyObject instance) where T : class
+    {
+        ItemsControl? items = instance as ItemsControl;
+        if (items is not null)
+        {
+            return items.Items.OfType<T>().LastOrDefault();
+        }
+
+        Panel? panel = instance as Panel;
+        if (panel is not null)
+        {
+            return panel.Children.OfType<T>().LastOrDefault();
+        }
+
+        throw new NotImplementedException();
+    }
+
+    static public IEnumerator? GetEnumerator(this DependencyObject instance)
+    {
+        ItemsControl? items = instance as ItemsControl;
+        if (items is not null)
+        {
+            return (items.Items as IEnumerable).GetEnumerator();
+        }
+
+        Panel? panel = instance as Panel;
+        if (panel is not null)
+        {
+            return panel.Children.GetEnumerator();
+        }
+
+        throw new NotImplementedException();
     }
 }

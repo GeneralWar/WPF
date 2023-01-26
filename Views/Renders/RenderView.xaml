@@ -6,7 +6,5 @@
              xmlns:local="clr-namespace:General.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid x:Name="mRenderHolder">
-            
-    </Grid>
+    <Grid x:Name="mRenderHolder"/>
 </UserControl>
