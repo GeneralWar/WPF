@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="TreeViewTestWindow" Height="600" Width="360" WindowStartupLocation="CenterScreen">
     <Grid>
-        <general:TreeView x:Name="mTreeView">
+        <general:TreeView x:Name="mTreeView" AllowItemDrag="True">
             <general:TreeViewItem Header="1">
                 <general:TreeViewItem Header="11"></general:TreeViewItem>
                 <general:TreeViewItem Header="12"></general:TreeViewItem>

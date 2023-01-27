@@ -29,11 +29,11 @@ namespace General.WPF
 
         public class DragEvent : UIChangingEvent
         {
-            public object SourceItem { get; private set; }
+            public object? SourceItem { get; private set; }
             public ITreeViewItemCollection TargetItem { get; private set; }
             public DragModes Mode { get; private set; }
 
-            public DragEvent(object sourceItem, ITreeViewItemCollection targetItem, DragModes mode)
+            public DragEvent(object? sourceItem, ITreeViewItemCollection targetItem, DragModes mode)
             {
                 this.SourceItem = sourceItem;
                 this.TargetItem = targetItem;

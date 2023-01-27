@@ -23,7 +23,7 @@ namespace General.WPF
                     return;
                 }
                 //Trace.Assert(e.Source == e.OriginalSource);
-                DragDrop.DoDragDrop(this, this, DragDropEffects.Move);
+                DragDrop.DoDragDrop(this, this.ToDragData(), DragDropEffects.Move);
             }
         }
 

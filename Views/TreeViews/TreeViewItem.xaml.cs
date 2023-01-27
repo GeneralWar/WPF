@@ -90,6 +90,7 @@ namespace General.WPF
         {
             base.OnVisualParentChanged(oldParent);
             mCollection = (this.Parent as IMultipleSelectionsCollection) ?? (this.Parent as IMultipleSelectionsItem)?.Collection;
+            this.AllowDrop = this.GetTreeViewOwner()?.AllowItemDrag ?? false;
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -113,7 +114,7 @@ namespace General.WPF
                 return;
             }
 
-            TreeViewItem ? item = (e.Source as FrameworkElement)?.FindAncestor<TreeViewItem>();
+            TreeViewItem? item = (e.Source as FrameworkElement)?.FindAncestor<TreeViewItem>();
             if (this != item)
             {
                 return;

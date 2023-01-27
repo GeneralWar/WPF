@@ -133,7 +133,7 @@ namespace General.WPF
                     if (item?.AllowDrop ?? false)
                     {
                         item.AllowDrop = false;
-                        DragDropEffects result = DragDrop.DoDragDrop(item, item, DragDropEffects.All);
+                        DragDropEffects result = DragDrop.DoDragDrop(item, item.ToDragData(), DragDropEffects.Move | DragDropEffects.Copy);
                         mDragCancel = DragDropEffects.None == result;
                         item.AllowDrop = true;
 
@@ -162,14 +162,14 @@ namespace General.WPF
             TreeViewItem? sourceItem;
             ITreeViewItemCollection? targetItem;
             DragModes mode = this.checkDragMode(e, out sourceItem, out targetItem);
-            if (DragModes.None == mode || targetItem is null || sourceItem is null)
+            if (DragModes.None == mode || targetItem is null)
             {
                 e.Effects = DragDropEffects.None;
                 this.hideDragMask();
                 return;
             }
 
-            DragEvent drag = new DragEvent(sourceItem, targetItem, mode);
+            DragEvent drag = new DragEvent(sourceItem ?? e.GetDragSource(), targetItem, mode);
             this.onDrop?.Invoke(drag);
             if (drag.Canceled)
             {
@@ -195,7 +195,7 @@ namespace General.WPF
 
         private DragModes checkDragMode(DragEventArgs e, out TreeViewItem? sourceItem, out ITreeViewItemCollection? targetItem)
         {
-            sourceItem = e.Data.GetData(typeof(TreeViewItem)) as TreeViewItem;
+            sourceItem = e.GetDragSource() as TreeViewItem;
             targetItem = this.InputHitTest(e.GetPosition(this))?.FindAncestor<ITreeViewItemCollection>();
             if (targetItem is null)
             {
