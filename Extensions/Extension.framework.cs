@@ -165,13 +165,13 @@ static public partial class Extension
         ItemsControl? items = instance as ItemsControl;
         if (items is not null)
         {
-            return (items.Items as IEnumerable).GetEnumerator();
+            return items.Items.IsEmpty ? null : (items.Items as IEnumerable).GetEnumerator();
         }
 
         Panel? panel = instance as Panel;
         if (panel is not null)
         {
-            return panel.Children.GetEnumerator();
+            return 0 == panel.Children.Count ? null : panel.Children.GetEnumerator();
         }
 
         throw new NotImplementedException();

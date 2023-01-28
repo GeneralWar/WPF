@@ -132,21 +132,25 @@ namespace General.WPF
                 return;
             }
 
-            if (!this.IsSelected || !(this as IMultipleSelectionsItem).IsOnlySelected())
+            if (!this.IsSelected)
             {
                 this.Collection.Select(this);
                 return;
             }
-
-            mCanEdit = true;
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
+            e.Handled = true; // 防止事件渗透
 
-            if (MouseButton.Left != e.ChangedButton || !(this as IMultipleSelectionsItem).IsOnlySelected())
+            if (MouseButton.Left == e.ChangedButton && !(this as IMultipleSelectionsItem).IsOnlySelected())
             {
+                if (!e.IsShiftDown() && !e.IsControlDown())
+                {
+                    this.Collection.Select(this);
+                }
+                mCanEdit = false;
                 return;
             }
 
@@ -171,6 +175,10 @@ namespace General.WPF
                 e.Handled = true;
                 mCanEdit = false;
                 Trace.WriteLine($"{nameof(TreeViewItem)}: try to edit {header} after 500ms");
+            }
+            else
+            {
+                mCanEdit = true;
             }
         }
 
@@ -371,6 +379,7 @@ namespace General.WPF
                 else
                 {
                     this.Collection.Unselect(this);
+                    mCanEdit = false;
                 }
             }
 

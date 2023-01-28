@@ -1,4 +1,5 @@
-﻿using System;
+﻿using General.WPF.Helpers;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -133,9 +134,19 @@ namespace General.WPF
                     if (item?.AllowDrop ?? false)
                     {
                         item.AllowDrop = false;
-                        DragDropEffects result = DragDrop.DoDragDrop(item, item.ToDragData(), DragDropEffects.Move | DragDropEffects.Copy);
-                        mDragCancel = DragDropEffects.None == result;
-                        item.AllowDrop = true;
+                        try
+                        {
+                            DragDropEffects result = DragDrop.DoDragDrop(item, item.ToDragData(), DragDropEffects.Move | DragDropEffects.Copy);
+                            mDragCancel = DragDropEffects.None == result;
+                        }
+                        catch (Exception exception)
+                        {
+                            Tracer.Exception(exception);
+                        }
+                        finally
+                        {
+                            item.AllowDrop = true;
+                        }
 
                         this.hideDragMask();
                     }
@@ -432,48 +443,22 @@ namespace General.WPF
                 return;
             }
 
-            IEnumerator? enumerator = from.Parent.GetEnumerator();
-            if (enumerator is null)
+            DependencyObject? fromObject = from as DependencyObject;
+            DependencyObject? toObject = to as DependencyObject;
+            if (fromObject is null || toObject is null)
             {
                 return;
             }
 
-            while (enumerator.MoveNext() && enumerator.Current != from) ;
-            if (this.enumerateTo(enumerator, to, handler))
+            EnumerateTo enumerator = new EnumerateTo(fromObject, toObject);
+            enumerator.Enumerate(i =>
             {
-                return;
-            }
-
-            IMultipleSelectionsItem? fromParent = from.Parent as IMultipleSelectionsItem;
-            if (fromParent is not null)
-            {
-                this.enumerateTo(fromParent, to, handler);
-            }
-        }
-
-        private bool enumerateTo(IEnumerator enumerator, IMultipleSelectionsItem to, Action<IMultipleSelectionsItem>? handler)
-        {
-            bool move;
-            while ((move = enumerator.MoveNext()) && enumerator.Current != to)
-            {
-                IMultipleSelectionsItem? i = enumerator.Current as IMultipleSelectionsItem;
-                if (i is not null)
+                IMultipleSelectionsItem? item = i as IMultipleSelectionsItem;
+                if (item is not null)
                 {
-                    handler?.Invoke(i);
+                    handler?.Invoke(item);
                 }
-
-                IEnumerator? childEnumerator = (i as DependencyObject)?.GetEnumerator();
-                if (childEnumerator is not null && this.enumerateTo(childEnumerator, to, handler))
-                {
-                    return true;
-                }
-            }
-            if (move && enumerator.Current == to)
-            {
-                handler?.Invoke(to);
-                return true;
-            }
-            return false;
+            });
         }
 
         private string getPathID(IMultipleSelectionsItem item)
@@ -482,28 +467,11 @@ namespace General.WPF
             FrameworkElement? element = item as FrameworkElement;
             while (element is not null && this != element)
             {
+                builder.Append('_');
                 builder.Append(element.GetSiblingIndex());
                 element = element.Parent as FrameworkElement;
             }
-            return builder.ToString().Reverse();
-        }
-
-        private void enumerateItems(TreeViewItem root, List<IMultipleSelectionsItem> items)
-        {
-            items.Add(root);
-            if (root.IsExpanded)
-            {
-                foreach (object i in root.Items)
-                {
-                    TreeViewItem? item = i as TreeViewItem;
-                    if (item is null)
-                    {
-                        continue;
-                    }
-
-                    this.enumerateItems(item, items);
-                }
-            }
+            return builder.Remove(0, 1).ToString().Reverse();
         }
 
         private void reportSelectedItemsChange()
@@ -635,7 +603,11 @@ namespace General.WPF
                 return;
             }
 
-            mSelectedItems.Remove(item);
+            if (!mSelectedItems.Remove(item))
+            {
+                return;
+            }
+
             item.IsSelected = false;
             if (this.SelectedItem == item)
             {
