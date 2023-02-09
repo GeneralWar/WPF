@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,8 +9,8 @@ namespace General.WPF
     public partial class IntegerInputBox : NumberInputBox<int>
     {
         public delegate void OnValueChange(IntegerInputBox input, int value);
-
-        public event OnValueChange? ValueChange = null;
+        public event OnValueChange? ValueChanging = null;
+        public event OnValueChange? ValueChanged = null;
 
         public IntegerInputBox()
         {
@@ -33,9 +34,14 @@ namespace General.WPF
             return valueFromText;
         }
 
-        protected override void reportValueChange(int value)
+        protected override void reportValueChanging()
         {
-            this.ValueChange?.Invoke(this, value);
+            this.ValueChanging?.Invoke(this, this.Value);
+        }
+
+        protected override void reportValueChanged()
+        {
+            this.ValueChanged?.Invoke(this, this.Value);
         }
     }
 }

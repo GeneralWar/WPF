@@ -3,6 +3,10 @@
     "TreeView": {
       "commandName": "Project",
       "commandLineArgs": "--test TreeView"
+    },
+    "NumberInput": {
+      "commandName": "Project",
+      "commandLineArgs": "--test NumberInput"
     }
   }
 }

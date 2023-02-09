@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,11 +9,11 @@ namespace General.WPF
     public partial class DecimalInputBox : NumberInputBox<decimal>
     {
         public delegate void OnValueChange(DecimalInputBox input, decimal value);
+        public event OnValueChange? ValueChanging = null;
+        public event OnValueChange? ValueChanged = null;
 
         public int Precision { get; set; } = 2;
         protected string StringFormat => $"F{this.Precision}";
-
-        public event OnValueChange? ValueChange = null;
 
         public DecimalInputBox()
         {
@@ -36,9 +37,14 @@ namespace General.WPF
             return valueFromText;
         }
 
-        protected override void reportValueChange(decimal value)
+        protected override void reportValueChanging()
         {
-            this.ValueChange?.Invoke(this, value);
+            this.ValueChanging?.Invoke(this, this.Value);
+        }
+
+        protected override void reportValueChanged()
+        {
+            this.ValueChanged?.Invoke(this, this.Value);
         }
     }
 }

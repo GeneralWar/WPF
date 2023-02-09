@@ -65,6 +65,25 @@ static public partial class Extension
         return parent as T;
     }
 
+    static public T? FindAncestor<T>(this IInputElement element, bool includeSelf, Func<T, bool>? filter) where T : class
+    {
+        FrameworkElement? parent = element as FrameworkElement;
+        if (includeSelf && parent is T)
+        {
+            return parent as T;
+        }
+
+        while ((parent = parent?.GetRealParent()) is not null)
+        {
+            T? t = parent as T;
+            if (t is not null && (filter?.Invoke(t) ?? true))
+            {
+                return t;
+            }
+        }
+        return null;
+    }
+
     static public void RemoveFromParent(this FrameworkElement element)
     {
         element?.Parent?.RemoveChild(element);

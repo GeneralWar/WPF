@@ -20,6 +20,9 @@ namespace Test
                 case "TreeView":
                     new TreeViewTestWindow().Show();
                     break;
+                case "NumberInput":
+                    new NumberInputTestWindow().Show();
+                    break;
                 default:
                     new MainWindow().Show();
                     break;

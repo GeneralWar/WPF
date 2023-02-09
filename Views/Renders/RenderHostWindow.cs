@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Windows.Input;
 using System.Windows.Interop;
 
 namespace General.WPF

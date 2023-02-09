@@ -136,7 +136,7 @@ namespace General.WPF
                         item.AllowDrop = false;
                         try
                         {
-                            DragDropEffects result = DragDrop.DoDragDrop(item, item.ToDragData(), DragDropEffects.Move | DragDropEffects.Copy);
+                            DragDropEffects result = DragDrop.DoDragDrop(item, item.ToDragData(), DragDropEffects.Move | DragDropEffects.Link | DragDropEffects.Copy);
                             mDragCancel = DragDropEffects.None == result;
                         }
                         catch (Exception exception)
@@ -638,34 +638,6 @@ namespace General.WPF
         void IMultipleSelectionsCollection.ClearAllSelections()
         {
             this.ClearAllSelections();
-        }
-
-        public void ExpandAll()
-        {
-            this.expandAll(this.Items);
-        }
-
-        private void expandAll(ItemCollection items)
-        {
-            foreach (System.Windows.Controls.TreeViewItem item in items.OfType<System.Windows.Controls.TreeViewItem>())
-            {
-                item.IsExpanded = true;
-                this.expandAll(item.Items);
-            }
-        }
-
-        public void CollapseAll()
-        {
-            this.collapseAll(this.Items);
-        }
-
-        private void collapseAll(ItemCollection items)
-        {
-            foreach (System.Windows.Controls.TreeViewItem item in items.OfType<System.Windows.Controls.TreeViewItem>())
-            {
-                item.IsExpanded = false;
-                this.expandAll(item.Items);
-            }
         }
     }
 }

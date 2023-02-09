@@ -6,24 +6,23 @@ using System.Windows.Input;
 
 namespace General.WPF
 {
-    public abstract class NumberInputBox<T> : TextBox where T : struct
+    public abstract class NumberInputBox<ValueType> : TextBox where ValueType : struct
     {
-        static protected readonly DependencyProperty PROPERTY_VALUE = DependencyProperty.Register(nameof(NumberInputBox<T>.Value), typeof(T), typeof(NumberInputBox<T>), new FrameworkPropertyMetadata(default(T), OnValuePropertyChange)); 
-        
+        static protected readonly DependencyProperty PROPERTY_VALUE = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>), new FrameworkPropertyMetadata(default(ValueType), OnValuePropertyChange));
+
         static private void OnValuePropertyChange(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            NumberInputBox<T>? input = d as NumberInputBox<T>;
+            NumberInputBox<ValueType>? input = d as NumberInputBox<ValueType>;
             if (input is null)
             {
                 return;
             }
 
-            input.Value = (T)e.NewValue;
+            input.Value = (ValueType)e.NewValue;
         }
 
-        public T Value { get => (T)this.GetValue(PROPERTY_VALUE); set { this.SetValue(PROPERTY_VALUE, value); this.updateText(value, null); } }
-
-        public event RoutedEventHandler? EnterDown = null;
+        public ValueType Value { get => (ValueType)this.GetValue(PROPERTY_VALUE); set { this.updateData(value); this.updateText(value, true, null); } }
+        private bool mTextUpdating = false;
 
         public NumberInputBox()
         {
@@ -32,6 +31,8 @@ namespace General.WPF
             this.InputScope = scope;
             this.VerticalAlignment = VerticalAlignment.Center;
             this.VerticalContentAlignment = VerticalAlignment.Center;
+
+            this.updateText(this.Value, true, null);
         }
 
         /// <summary>
@@ -39,9 +40,9 @@ namespace General.WPF
         /// </summary>
         /// <param name="value">The real value that current control holds</param>
         /// <returns>The display text for TextBox</returns>
-        protected abstract string checkString(T value);
+        protected abstract string checkString(ValueType value);
 
-        protected abstract bool TryParse(string text, out T value);
+        protected abstract bool TryParse(string text, out ValueType value);
 
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
@@ -57,11 +58,24 @@ namespace General.WPF
             }
         }
 
-        private void updateText(T value, TextChangedEventArgs? e)
+        private string shortenText(string text)
         {
-            string targetText = this.checkString(value);
+            return text.TrimEnd('0').TrimEnd('.');
+        }
+
+        private void updateText(string text, bool trim)
+        {
+            mTextUpdating = true;
+            this.Text = trim ? this.shortenText(text) : text;
+            mTextUpdating = false;
+        }
+
+        private void updateText(ValueType value, bool trim, TextChangedEventArgs? e)
+        {
             string currentText = this.Text;
-            this.Text = targetText;
+            string targetText = this.checkString(value);
+            this.updateText(targetText, trim);
+
             if (e is not null)
             {
                 if (0 == e.Changes.Count)
@@ -90,40 +104,105 @@ namespace General.WPF
             }
         }
 
+        private void updateData(ValueType value)
+        {
+            this.SetValue(PROPERTY_VALUE, value);
+        }
+
+        private void updateDataChanging(ValueType value)
+        {
+            if (this.Value.Equals(value))
+            {
+                return;
+            }
+
+            this.updateData(value);
+            this.reportValueChanging();
+        }
+
         protected override void OnTextChanged(TextChangedEventArgs e)
         {
             base.OnTextChanged(e);
 
-            T value;
-            if (!this.TryParse(this.Text, out value))
+            if (mTextUpdating)
             {
-                this.updateText(this.Value, e);
                 return;
             }
 
-            T finalValue = this.checkValue(value);
-            string expectedString = this.checkString(finalValue);
-            if (this.Text != expectedString)
+            TextChange change = e.Changes.First();
+
+            ValueType value;
+            string text = this.Text;
+            if (string.IsNullOrWhiteSpace(text))
             {
-                int index = expectedString.IndexOf(this.Text);
-                if (e.Changes.All(c => c.AddedLength > 0 && c.RemovedLength > 0))
-                {
-                    ++index;
-                }
-                if (index < 1)
-                {
-                    index = this.CaretIndex;
-                }
-                this.Text = expectedString;
-                this.CaretIndex = index;
+                this.updateDataChanging(default(ValueType));
+                this.updateText("", false);
                 return;
             }
 
-            if (!this.Value.Equals(finalValue))
+            if (!this.TryParse(text, out value))
             {
-                this.Value = finalValue;
-                this.reportValueChange(finalValue);
+                if (text.Count('-') == text.Length)
+                {
+                    text = "-";
+                }
+
+                if ("-" == text)
+                {
+                    this.updateDataChanging(value);
+                    this.updateText(text, false);
+                    this.CaretIndex = text.Length;
+                    return;
+                }
+
+                if (text.EndsWith('.') && text.Count('.') > 1)
+                {
+                    text = text.Substring(0, text.Length - 1);
+                    this.updateDataChanging(value);
+                    this.updateText(text, false);
+                    this.CaretIndex = text.Length;
+                    return;
+                }
+
+                string previousText = text.Remove(change.Offset, change.AddedLength);
+                if (this.TryParse(previousText, out value))
+                {
+                    this.updateText(previousText, false);
+                    this.CaretIndex = previousText.Length;
+                    return;
+                }
+
+                throw new NotImplementedException();
+                //this.updateText(this.Value, false, e);
+                //return;
             }
+
+            ValueType finalValue = this.checkValue(value);
+            //string expectedString = this.shortenText(this.checkString(finalValue));
+            //if (this.Text != expectedString)
+            //{
+            //    if (this.Text.EndsWith('.') && 1 == this.Text.Count('.'))
+            //    {
+            //        return;
+            //    }
+
+            //    int index = expectedString.IndexOf(this.Text);
+            //    if (e.Changes.All(c => c.AddedLength > 0 && c.RemovedLength > 0))
+            //    {
+            //        ++index;
+            //    }
+            //    if (index < 1)
+            //    {
+            //        index = this.CaretIndex;
+            //    }
+            //    this.Text = expectedString;
+            //    this.CaretIndex = index;
+            //    return;
+            //}
+
+            this.updateDataChanging(finalValue);
+            this.updateText(text, false);
+            this.CaretIndex = change.Offset + change.AddedLength;
         }
 
         /// <summary>
@@ -131,9 +210,10 @@ namespace General.WPF
         /// </summary>
         /// <param name="valueFromText">Value parsed from TextBox</param>
         /// <returns>The final value calculated by current control</returns>
-        protected abstract T checkValue(T valueFromText);
+        protected abstract ValueType checkValue(ValueType valueFromText);
 
-        protected abstract void reportValueChange(T value);
+        protected abstract void reportValueChanging();
+        protected abstract void reportValueChanged();
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -141,19 +221,36 @@ namespace General.WPF
 
             if (Key.Enter == e.Key)
             {
-                this.EnterDown?.Invoke(this, e);
+                FrameworkElement? ancestor = this.FindAncestor<FrameworkElement>(false, e => e.Focusable);
+                if (ancestor is null || (ancestor is Window && this.GetTopWindow() == ancestor))
+                {
+                    this.updateText(this.Value, true, null);
+                    this.CaretIndex = this.Text.Length;
+                    this.reportValueChanged();
+                }
+                else
+                {
+                    ancestor.Focus();
+                }
             }
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            base.OnLostFocus(e);
+            this.updateText(this.Value, true, null);
+            this.reportValueChanged();
         }
     }
 
     public class NumberInputBox : NumberInputBox<double>
     {
-        public delegate void OnValueChange(NumberInputBox input, double value);
-
         public int Precision { get; set; } = 2;
         protected string StringFormat => $"F{this.Precision}";
 
-        public event OnValueChange? ValueChange = null;
+        public delegate void OnValueChange(NumberInputBox input, double value);
+        public event OnValueChange? ValueChanging = null;
+        public event OnValueChange? ValueChanged = null;
 
         public NumberInputBox()
         {
@@ -177,9 +274,14 @@ namespace General.WPF
             return valueFromText;
         }
 
-        protected override void reportValueChange(double value)
+        protected override void reportValueChanging()
         {
-            this.ValueChange?.Invoke(this, value);
+            this.ValueChanging?.Invoke(this, this.Value);
+        }
+
+        protected override void reportValueChanged()
+        {
+            this.ValueChanged?.Invoke(this, this.Value);
         }
     }
 }

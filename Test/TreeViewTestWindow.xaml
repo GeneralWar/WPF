@@ -31,5 +31,28 @@
                 <general:TreeViewItem Header="43"></general:TreeViewItem>
             </general:TreeViewItem>
         </general:TreeView>
+        <!--<TreeView x:Name="mTreeView">
+            <TreeViewItem Header="1" MouseDoubleClick="onItemMouseDoubleClick">
+                <TreeViewItem Header="11"></TreeViewItem>
+                <TreeViewItem Header="12"></TreeViewItem>
+                <TreeViewItem Header="13"></TreeViewItem>
+            </TreeViewItem>
+            <TreeViewItem Header="2" IsExpanded="True">
+                <TreeViewItem Header="21"></TreeViewItem>
+                <TreeViewItem Header="22">
+                    <TreeViewItem Header="221"></TreeViewItem>
+                    <TreeViewItem Header="222"></TreeViewItem>
+                    <TreeViewItem Header="223"></TreeViewItem>
+                </TreeViewItem>
+                <TreeViewItem Header="23"></TreeViewItem>
+            </TreeViewItem>
+            <TreeViewItem Header="3"></TreeViewItem>
+            <TreeViewItem Header="4">
+                <TreeViewItem Header="41"></TreeViewItem>
+                <TreeViewItem Header="42"></TreeViewItem>
+                <TreeViewItem Header="Test"></TreeViewItem>
+                <TreeViewItem Header="43"></TreeViewItem>
+            </TreeViewItem>
+        </TreeView>-->
     </Grid>
 </Window>

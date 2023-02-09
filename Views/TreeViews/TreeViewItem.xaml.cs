@@ -29,7 +29,7 @@ namespace General.WPF
         }
 
         public delegate bool OnItemHeaderChange(TreeViewItem item, string oldName, string newName);
-        public event OnItemHeaderChange? onItemHeaderChanging = null;
+        public event OnItemHeaderChange? OnItemHeaderChanging = null;
 
         public delegate void OnItemsChange(object sender, NotifyCollectionChangedEventArgs e);
         public event OnItemsChange? onItemsChange = null;
@@ -39,6 +39,7 @@ namespace General.WPF
         private Border? mInputBoard = null;
 
         private bool mIsEditing = false;
+        private bool mWaitForEditing = false;
         private bool mCanEdit = false;
         private EditToken mCancelToken = new EditToken();
 
@@ -57,6 +58,9 @@ namespace General.WPF
 
         private string mHeader = "";
 
+        public event Action<TreeViewItem>? OnEditConfirm = null;
+        public event Action<TreeViewItem>? OnEditCancel = null;
+
         public TreeViewItem()
         {
             InitializeComponent();
@@ -74,16 +78,25 @@ namespace General.WPF
             }
         }
 
-        //public bool IsHeaderArea(IInputElement element)
-        //{
-        //    this.checkTempalteBoards();
-        //    return element is TextBlock || element == mTextBoard || element == mInputBoard;
-        //}
+        private bool hitInSelf(Point position)
+        {
+            return this != this.InputHitTest(position).FindAncestor<TreeViewItem>();
+        }
+
+        private bool hitInHeader(Point position)
+        {
+            IInputElement element = this.InputHitTest(position);
+            return mTextBoard == element || mInputBoard == element;
+        }
 
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
             this.checkTempalteBoards();
+            if (mWaitForEditing)
+            {
+                this.Edit();
+            }
         }
 
         protected override void OnVisualParentChanged(DependencyObject oldParent)
@@ -142,15 +155,24 @@ namespace General.WPF
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
-            e.Handled = true; // 防止事件渗透
 
-            if (MouseButton.Left == e.ChangedButton && !(this as IMultipleSelectionsItem).IsOnlySelected())
+            if (this.hitInSelf(e.GetPosition(this)))
+            {
+                return;
+            }
+
+            if (!(this as IMultipleSelectionsItem).IsOnlySelected())
             {
                 if (!e.IsShiftDown() && !e.IsControlDown())
                 {
                     this.Collection.Select(this);
                 }
                 mCanEdit = false;
+                return;
+            }
+
+            if (MouseButton.Left != e.ChangedButton)
+            {
                 return;
             }
 
@@ -172,7 +194,6 @@ namespace General.WPF
                         this.Dispatcher.Invoke(this.Edit);
                     }
                 }, mCancelToken);
-                e.Handled = true;
                 mCanEdit = false;
                 Trace.WriteLine($"{nameof(TreeViewItem)}: try to edit {header} after 500ms");
             }
@@ -182,14 +203,41 @@ namespace General.WPF
             }
         }
 
+        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+        {
+            base.OnMouseDoubleClick(e);
+
+            if (this.hitInHeader(e.GetPosition(this)))
+            {
+                if (e.IsControlDown())
+                {
+                    if (this.IsExpanded)
+                    {
+                        this.CollapseSubtree();
+                    }
+                    else
+                    {
+                        this.ExpandSubtree();
+                    }
+                }
+                else
+                {
+                    this.IsExpanded = !this.IsExpanded;
+                }
+                e.Handled = true;
+            }
+        }
+
         protected override void OnPreviewMouseDoubleClick(MouseButtonEventArgs e)
         {
+            base.OnPreviewMouseDoubleClick(e);
+
             if (MouseButton.Left != e.ChangedButton)
             {
                 return;
             }
 
-            e.Handled = true;
+            //e.Handled = true;
             mCanEdit = false;
             mCancelToken.Cancel();
             Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnPreviewMouseDoubleClick)}: try to cancel edit of {this.Header}");
@@ -240,6 +288,7 @@ namespace General.WPF
             TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
             if (inputBox is null)
             {
+                mWaitForEditing = true;
                 return;
             }
 
@@ -249,6 +298,7 @@ namespace General.WPF
 
             inputBox.LostFocus += onItemInputLostFocus;
             inputBox.Visibility = Visibility.Visible;
+            inputBox.Text = mHeader;
             inputBox.SelectAll();
             inputBox.Focus();
         }
@@ -321,7 +371,7 @@ namespace General.WPF
                     bool changeResult = true;
                     try
                     {
-                        changeResult = this.onItemHeaderChanging?.Invoke(this, currentText, targetText) ?? true; // if no handler, default is true
+                        changeResult = this.OnItemHeaderChanging?.Invoke(this, currentText, targetText) ?? true; // if no handler, default is true
                     }
                     catch (Exception e)
                     {
@@ -343,6 +393,8 @@ namespace General.WPF
             }
 
             mIsEditing = false;
+
+            this.OnEditConfirm?.Invoke(this);
         }
 
         private void Cancel()
@@ -358,6 +410,8 @@ namespace General.WPF
             }
             this.Header = mHeader;
             mIsEditing = false;
+
+            this.OnEditCancel?.Invoke(this);
         }
 
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
