@@ -201,8 +201,16 @@ namespace General.WPF
             //}
 
             this.updateDataChanging(finalValue);
+
+            int caretIndex = change.Offset + change.AddedLength;
+            if (text.StartsWith('0') && "0" != text)
+            {
+                string shortText = text.TrimStart('0');
+                caretIndex -= text.Length - shortText.Length;
+                text = shortText;
+            }
             this.updateText(text, false);
-            this.CaretIndex = change.Offset + change.AddedLength;
+            this.CaretIndex = Math.Max(0, caretIndex);
         }
 
         /// <summary>
