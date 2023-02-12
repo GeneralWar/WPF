@@ -60,7 +60,20 @@ namespace General.WPF
 
         private string shortenText(string text)
         {
+            if ("0" == text)
+            {
+                return text;
+            }
             return text.TrimEnd('0').TrimEnd('.');
+        }
+
+        /// <summary>
+        /// update text only, without emiting value change event
+        /// </summary>
+        /// <param name="text"></param>
+        public void UpdateText(string text)
+        {
+            this.updateText(text, true);
         }
 
         private void updateText(string text, bool trim)
@@ -152,6 +165,12 @@ namespace General.WPF
                     this.updateDataChanging(value);
                     this.updateText(text, false);
                     this.CaretIndex = text.Length;
+                    return;
+                }
+
+                if ("." == text)
+                {
+                    this.updateDataChanging(default(ValueType));
                     return;
                 }
 
