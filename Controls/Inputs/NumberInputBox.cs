@@ -8,7 +8,7 @@ namespace General.WPF
 {
     public abstract class NumberInputBox<ValueType> : TextBox where ValueType : struct
     {
-        static protected readonly DependencyProperty PROPERTY_VALUE = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>), new FrameworkPropertyMetadata(default(ValueType), OnValuePropertyChange));
+        static protected readonly DependencyProperty PROPERTY_VALUE = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>), new FrameworkPropertyMetadata(default(ValueType), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValuePropertyChange));
 
         static private void OnValuePropertyChange(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -79,7 +79,7 @@ namespace General.WPF
         private void updateText(string text, bool trim)
         {
             mTextUpdating = true;
-            this.Text = trim ? this.shortenText(text) : text;
+            this.Dispatcher.Invoke(() => this.Text = trim ? this.shortenText(text) : text);
             mTextUpdating = false;
         }
 

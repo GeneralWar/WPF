@@ -23,6 +23,9 @@ namespace Test
                 case "NumberInput":
                     new NumberInputTestWindow().Show();
                     break;
+                case "CheckBoxExpander":
+                    new CheckBoxExpanderWindow().Show();
+                    break;
                 default:
                     new MainWindow().Show();
                     break;

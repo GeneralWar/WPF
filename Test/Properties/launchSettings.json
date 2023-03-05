@@ -7,6 +7,10 @@
     "NumberInput": {
       "commandName": "Project",
       "commandLineArgs": "--test NumberInput"
+    },
+    "CheckBoxExpander": {
+      "commandName": "Project",
+      "commandLineArgs": "--test CheckBoxExpander"
     }
   }
 }

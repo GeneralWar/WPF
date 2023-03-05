@@ -3,6 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Test">
     <Application.Resources>
-        
+        <ResourceDictionary Source="pack://application:,,,/General.WPF;component/Resources.xaml" />
     </Application.Resources>
 </Application>
