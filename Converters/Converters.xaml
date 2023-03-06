@@ -1,8 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:General.WPF">
-    <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
-    <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
     <!--boolean to Visibility-->
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
     <local:InverseBooleanToVisibilityCollapsedConverter x:Key="InverseBooleanToVisibilityCollapsedConverter"/>
@@ -10,9 +8,12 @@
     <local:InverseBooleanToVisibilityHiddenConverter x:Key="InverseBooleanToVisibilityHiddenConverter"/>
     <!--number to Visibility-->
     <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
-    <!--float to string-->
+    <!--string converters-->
     <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
     <local:DecimalToStringConverter x:Key="DecimalToStringConverter"/>
+    <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
+    <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
+    <local:UriStringConverter x:Key="UriStringConverter"/>
     <!--number to boolean-->
     <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
     <!--selection to enable-->
