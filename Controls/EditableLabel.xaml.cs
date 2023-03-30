@@ -20,6 +20,7 @@ namespace General.WPF
         public event OnEditableLabelChange? onEditCancel = null;
         public event OnEditableLabelChange? onEditFinish = null;
 
+        /// <returns>make sure if lable text can change</returns>
         public delegate bool OnEditableLabelChanging(EditableLabel label, string newText);
         public event OnEditableLabelChanging? onLabelChanging = null;
 
