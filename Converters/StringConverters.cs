@@ -56,13 +56,13 @@ namespace General.WPF
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string content = value as string ?? "";
-            return content != null ? content.Replace("_", "__") : value;
+            return content != null ? content.EscapeToWindowsPresentationFoundationHeader() : value;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string content = value as string ?? "";
-            return content != null ? content.Replace("__", "_") : value;
+            return content != null ? content.UnescapeFromWindowsPresentationFoundationHeader() : value;
         }
     }
 
