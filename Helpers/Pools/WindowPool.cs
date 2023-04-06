@@ -26,16 +26,22 @@ namespace General.WPF
 
         static public T Register<T>() where T : Window, new()
         {
-            T window = new T();
-            Register(window);
-            return window;
+            return Application.Current.Dispatcher.Invoke(() =>
+            {
+                T window = new T();
+                Register(window);
+                return window;
+            });
         }
 
         static public T Register<T>(Func<T> creator) where T : Window
         {
-            T window = creator.Invoke();
-            Register(window);
-            return window;
+            return Application.Current.Dispatcher.Invoke(() =>
+            {
+                T window = creator.Invoke();
+                Register(window);
+                return window;
+            });
         }
 
         static public T? Get<T>() where T : Window
@@ -43,6 +49,26 @@ namespace General.WPF
             Window? window;
             sWindows.TryGetValue(typeof(T), out window);
             return window as T;
+        }
+
+        static public T GetOrRegister<T>() where T : Window, new()
+        {
+            T? window = Get<T>();
+            if (window is null)
+            {
+                window = Register<T>();
+            }
+            return window;
+        }
+
+        static public T GetOrRegister<T>(Func<T> creator) where T : Window
+        {
+            T? window = Get<T>();
+            if (window is null)
+            {
+                window = Register<T>(creator);
+            }
+            return window;
         }
     }
 }

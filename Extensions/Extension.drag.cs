@@ -1,18 +1,11 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 
 static public partial class Extension
 {
-    private const string DRAG_SOURCE = "DragSource";
-
-    static public DataObject ToDragData(this FrameworkElement element)
+    static public UIElement? GetItem(this Grid instance, int rowIndex, int columnIndex)
     {
-        System.Windows.DataObject data = new DataObject();
-        data.SetData(DRAG_SOURCE, element);
-        return data;
-    }
-
-    static public object? GetDragSource(this DragEventArgs e)
-    {
-        return e.Data.GetData(DRAG_SOURCE);
+        return instance.Children.OfType<UIElement>().FirstOrDefault(e => Grid.GetRow(e) == rowIndex && Grid.GetColumn(e) == columnIndex);
     }
 }
