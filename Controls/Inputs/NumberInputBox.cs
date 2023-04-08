@@ -2,26 +2,16 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace General.WPF
 {
     public abstract class NumberInputBox<ValueType> : TextBox where ValueType : struct
     {
-        static protected readonly DependencyProperty PROPERTY_VALUE = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>), new FrameworkPropertyMetadata(default(ValueType), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValuePropertyChange));
+        static public readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>));
 
-        static private void OnValuePropertyChange(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            NumberInputBox<ValueType>? input = d as NumberInputBox<ValueType>;
-            if (input is null)
-            {
-                return;
-            }
-
-            input.Value = (ValueType)e.NewValue;
-        }
-
-        public ValueType Value { get => (ValueType)this.GetValue(PROPERTY_VALUE); set { this.updateData(value); this.updateText(value, true, null); } }
+        public ValueType Value { get => (ValueType)this.GetValue(ValueProperty); set { this.updateData(value); this.updateText(value, true, null); } }
         private bool mTextUpdating = false;
 
         public NumberInputBox()
@@ -31,6 +21,11 @@ namespace General.WPF
             this.InputScope = scope;
             this.VerticalAlignment = VerticalAlignment.Center;
             this.VerticalContentAlignment = VerticalAlignment.Center;
+
+            Binding binding = new Binding();
+            binding.Source = this;
+            binding.Path = new PropertyPath("Value");
+            this.SetBinding(TextProperty, binding);
 
             this.updateText(this.Value, true, null);
         }
@@ -119,7 +114,7 @@ namespace General.WPF
 
         private void updateData(ValueType value)
         {
-            this.SetValue(PROPERTY_VALUE, value);
+            this.SetValue(ValueProperty, value);
         }
 
         private void updateDataChanging(ValueType value)
@@ -129,8 +124,8 @@ namespace General.WPF
                 return;
             }
 
-            this.updateData(value);
-            this.reportValueChanging();
+            //this.updateData(value); do not update data manually, to prevent removing binding expressions
+            this.reportValueChanging(value);
         }
 
         protected override void OnTextChanged(TextChangedEventArgs e)
@@ -239,8 +234,21 @@ namespace General.WPF
         /// <returns>The final value calculated by current control</returns>
         protected abstract ValueType checkValue(ValueType valueFromText);
 
-        protected abstract void reportValueChanging();
-        protected abstract void reportValueChanged();
+        protected abstract void reportValueChanging(ValueType value);
+        protected abstract void reportValueChanged(ValueType value);
+
+        private ValueType checkValueFromText()
+        {
+            ValueType value;
+            return this.TryParse(this.Text, out value) ? value : this.Value;
+        }
+
+        private void reportValueChanged()
+        {
+            ValueType value = this.checkValueFromText();
+            this.updateText(this.Value, true, null);
+            this.reportValueChanged(value);
+        }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -251,9 +259,8 @@ namespace General.WPF
                 FrameworkElement? ancestor = this.FindAncestor<FrameworkElement>(false, e => e.Focusable);
                 if (ancestor is null || (ancestor is Window && this.GetTopWindow() == ancestor))
                 {
-                    this.updateText(this.Value, true, null);
-                    this.CaretIndex = this.Text.Length;
                     this.reportValueChanged();
+                    this.CaretIndex = this.Text.Length;
                 }
                 else
                 {
@@ -265,8 +272,12 @@ namespace General.WPF
         protected override void OnLostFocus(RoutedEventArgs e)
         {
             base.OnLostFocus(e);
-            this.updateText(this.Value, true, null);
             this.reportValueChanged();
+        }
+
+        public override string ToString()
+        {
+            return $"{this.GetType().FullName}: {this.Value}";
         }
     }
 
@@ -277,6 +288,10 @@ namespace General.WPF
 
         public delegate void OnValueChange(NumberInputBox input, double value);
         public event OnValueChange? ValueChanging = null;
+        /// <summary>
+        /// Only report data from text when user press Enter or this control lost focus, 
+        /// cached data will not update, and will reset text with cached data before this event
+        /// </summary>
         public event OnValueChange? ValueChanged = null;
 
         public NumberInputBox()
@@ -301,14 +316,14 @@ namespace General.WPF
             return valueFromText;
         }
 
-        protected override void reportValueChanging()
+        protected override void reportValueChanging(double value)
         {
-            this.ValueChanging?.Invoke(this, this.Value);
+            this.ValueChanging?.Invoke(this, value);
         }
 
-        protected override void reportValueChanged()
+        protected override void reportValueChanged(double value)
         {
-            this.ValueChanged?.Invoke(this, this.Value);
+            this.ValueChanged?.Invoke(this, value);
         }
     }
 }

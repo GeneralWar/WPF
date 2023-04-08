@@ -8,6 +8,15 @@
     <local:InverseBooleanToVisibilityHiddenConverter x:Key="InverseBooleanToVisibilityHiddenConverter"/>
     <!--number to Visibility-->
     <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
+    <!--number to Thickness-->
+    <local:NumberToLeftThicknessConverter x:Key="NumberToLeftThicknessConverter"/>
+    <local:NumberToRightThicknessConverter x:Key="NumberToRightThicknessConverter"/>
+    <local:NumberToTopThicknessConverter x:Key="NumberToTopThicknessConverter"/>
+    <local:NumberToBottomThicknessConverter x:Key="NumberToBottomThicknessConverter"/>
+    <local:NumberToHorizontalThicknessConverter x:Key="NumberToHorizontalThicknessConverter"/>
+    <local:NumberToVerticalThicknessConverter x:Key="NumberToVerticalThicknessConverter"/>
+    <local:NumberToGridLengthPixelConverter x:Key="NumberToGridLengthPixelConverter"/>
+    <local:NumberToGridLengthStarConverter x:Key="NumberToGridLengthStarConverter"/>
     <!--string converters-->
     <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
     <local:DecimalToStringConverter x:Key="DecimalToStringConverter"/>

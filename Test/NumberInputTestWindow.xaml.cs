@@ -1,17 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace Genera.WPF.Test
 {
@@ -20,6 +8,9 @@ namespace Genera.WPF.Test
     /// </summary>
     public partial class NumberInputTestWindow : Window
     {
+        static private readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(Value), typeof(double), typeof(NumberInputTestWindow), new PropertyMetadata(1.0));
+        public double Value { get => (double)this.GetValue(ValueProperty); set => this.SetValue(ValueProperty, value); }
+
         public NumberInputTestWindow()
         {
             InitializeComponent();
@@ -34,6 +25,7 @@ namespace Genera.WPF.Test
         private void onValueChanged(General.WPF.NumberInputBox input, double value)
         {
             Trace.WriteLine($"{nameof(onValueChanged)}: {value}");
+            this.Value = value;
         }
     }
 }

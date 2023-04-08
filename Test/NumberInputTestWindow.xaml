@@ -8,6 +8,6 @@
         mc:Ignorable="d"
         Title="NumberInputTestWindow" Height="72" Width="144">
     <Grid>
-        <general:NumberInputBox Margin="6" Precision="6" Value="0" ValueChanging="onValueChanging" ValueChanged="onValueChanged"/>
+        <general:NumberInputBox Margin="6" Precision="6" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:NumberInputTestWindow}}, Path=Value, Mode=OneWay}" ValueChanging="onValueChanging" ValueChanged="onValueChanged"/>
     </Grid>
 </Window>

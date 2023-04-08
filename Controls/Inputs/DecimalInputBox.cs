@@ -10,6 +10,10 @@ namespace General.WPF
     {
         public delegate void OnValueChange(DecimalInputBox input, decimal value);
         public event OnValueChange? ValueChanging = null;
+        /// <summary>
+        /// Only report data from text when user press Enter or this control lost focus, 
+        /// cached data will not update, and will reset text with cached data before this event
+        /// </summary>
         public event OnValueChange? ValueChanged = null;
 
         public int Precision { get; set; } = 2;
@@ -37,14 +41,14 @@ namespace General.WPF
             return valueFromText;
         }
 
-        protected override void reportValueChanging()
+        protected override void reportValueChanging(decimal value)
         {
-            this.ValueChanging?.Invoke(this, this.Value);
+            this.ValueChanging?.Invoke(this, value);
         }
 
-        protected override void reportValueChanged()
+        protected override void reportValueChanged(decimal value)
         {
-            this.ValueChanged?.Invoke(this, this.Value);
+            this.ValueChanged?.Invoke(this, value);
         }
     }
 }

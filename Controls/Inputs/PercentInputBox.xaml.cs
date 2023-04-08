@@ -9,13 +9,12 @@ namespace General.WPF
     {
         static PercentInputBox()
         {
-            NumberInputBox.PROPERTY_VALUE.AddOwner(typeof(PercentInputBox));
+            NumberInputBox.ValueProperty.AddOwner(typeof(PercentInputBox));
         }
 
         public PercentInputBox()
         {
             InitializeComponent();
-            this.Value = 0;
         }
 
         protected override string checkString(double value)

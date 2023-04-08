@@ -38,6 +38,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Controls\Inputs\HeaderedIntegerInputBox.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Controls\Inputs\PercentInputBox.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
