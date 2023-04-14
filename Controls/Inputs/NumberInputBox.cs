@@ -59,7 +59,7 @@ namespace General.WPF
             {
                 return text;
             }
-            return text.TrimEnd('0').TrimEnd('.');
+            return text.Contains('.') ? text.TrimEnd('0').TrimEnd('.') : text;
         }
 
         /// <summary>
