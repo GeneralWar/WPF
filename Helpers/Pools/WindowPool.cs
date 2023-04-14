@@ -10,18 +10,21 @@ namespace General.WPF
 
         static public void Register(Window window)
         {
-            Type type = window.GetType();
-            if (!sWindows.TryAdd(type, window))
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                if (sWindows[type] == window)
+                Type type = window.GetType();
+                if (!sWindows.TryAdd(type, window))
                 {
-                    return;
+                    if (sWindows[type] == window)
+                    {
+                        return;
+                    }
+
+                    throw new InvalidOperationException($"{nameof(WindowPool)}: type {type} already exists");
                 }
 
-                throw new InvalidOperationException($"{nameof(WindowPool)}: type {type} already exists");
-            }
-
-            window.Closing += delegate { sWindows.Remove(window.GetType()); };
+                window.Closing += delegate { sWindows.Remove(window.GetType()); };
+            });
         }
 
         static public T Register<T>() where T : Window, new()
@@ -46,29 +49,38 @@ namespace General.WPF
 
         static public T? Get<T>() where T : Window
         {
-            Window? window;
-            sWindows.TryGetValue(typeof(T), out window);
-            return window as T;
+            return Application.Current.Dispatcher.Invoke(() =>
+            {
+                Window? window;
+                sWindows.TryGetValue(typeof(T), out window);
+                return window as T;
+            });
         }
 
         static public T GetOrRegister<T>() where T : Window, new()
         {
-            T? window = Get<T>();
-            if (window is null)
+            return Application.Current.Dispatcher.Invoke(() =>
             {
-                window = Register<T>();
-            }
-            return window;
+                T? window = Get<T>();
+                if (window is null)
+                {
+                    window = Register<T>();
+                }
+                return window;
+            });
         }
 
         static public T GetOrRegister<T>(Func<T> creator) where T : Window
         {
-            T? window = Get<T>();
-            if (window is null)
+            return Application.Current.Dispatcher.Invoke(() =>
             {
-                window = Register<T>(creator);
-            }
-            return window;
+                T? window = Get<T>();
+                if (window is null)
+                {
+                    window = Register<T>(creator);
+                }
+                return window;
+            });
         }
     }
 }
