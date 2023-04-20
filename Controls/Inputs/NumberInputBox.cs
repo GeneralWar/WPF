@@ -14,6 +14,11 @@ namespace General.WPF
         public ValueType Value { get => (ValueType)this.GetValue(ValueProperty); set { this.updateData(value); this.updateText(value, true, null); } }
         private bool mTextUpdating = false;
 
+        static public readonly DependencyProperty AutoSetValueWhenChangedProperty = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.AutoSetValueWhenChanged), typeof(bool), typeof(NumberInputBox<ValueType>), new PropertyMetadata(true));
+        public bool AutoSetValueWhenChanged { get => (bool)this.GetValue(AutoSetValueWhenChangedProperty); set { this.SetValue(AutoSetValueWhenChangedProperty, value); } }
+
+        public event RoutedEventHandler? EnterDown = null;
+
         public NumberInputBox()
         {
             InputScope scope = new InputScope();
@@ -259,13 +264,21 @@ namespace General.WPF
                 FrameworkElement? ancestor = this.FindAncestor<FrameworkElement>(false, e => e.Focusable);
                 if (ancestor is null || (ancestor is Window && this.GetTopWindow() == ancestor))
                 {
+                    ValueType value;
+                    string text = this.Text;
                     this.reportValueChanged();
                     this.CaretIndex = this.Text.Length;
+                    if (this.AutoSetValueWhenChanged && this.TryParse(text, out value))
+                    {
+                        this.Value = this.checkValue(value);
+                    }
                 }
                 else
                 {
                     ancestor.Focus();
                 }
+
+                this.EnterDown?.Invoke(this, e);
             }
         }
 
