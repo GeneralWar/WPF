@@ -195,7 +195,7 @@ namespace General.WPF
             if (mCanEdit)
             {
                 string header = this.Header as string ?? "";
-                Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnMouseUp)}: try to cancel edit of {header}");
+                Tracer.Log($"{nameof(TreeViewItem)}.{nameof(OnMouseUp)}: try to cancel edit of {header}");
                 mCancelToken.Cancel();
 
                 mCancelToken = new EditToken();
@@ -206,13 +206,13 @@ namespace General.WPF
 
                     if (!token.IsCanceled)
                     {
-                        Trace.WriteLine($"{nameof(TreeViewItem)}: try to edit {header}");
+                        Tracer.Log($"{nameof(TreeViewItem)}: try to edit {header}");
                         this.Dispatcher.Invoke(this.Edit);
                     }
                 }, mCancelToken);
                 e.Handled = true;
                 mCanEdit = false;
-                Trace.WriteLine($"{nameof(TreeViewItem)}: try to edit {header} after 500ms");
+                Tracer.Log($"{nameof(TreeViewItem)}: try to edit {header} after 500ms");
             }
         }
 
@@ -221,7 +221,7 @@ namespace General.WPF
             e.Handled = true;
             mCanEdit = false;
             mCancelToken.Cancel();
-            Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(OnPreviewMouseDoubleClick)}: try to cancel edit of {this.Header}");
+            Tracer.Log($"{nameof(TreeViewItem)}.{nameof(OnPreviewMouseDoubleClick)}: try to cancel edit of {this.Header}");
         }
 
         protected override void OnGotFocus(RoutedEventArgs e)
@@ -347,7 +347,7 @@ namespace General.WPF
                 return;
             }
 
-            Trace.WriteLine($"{nameof(TreeViewItem)}: try to commit {this.Header}");
+            Tracer.Log($"{nameof(TreeViewItem)}: try to commit {this.Header}");
 
             TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
             if (inputBox is not null)
@@ -388,7 +388,7 @@ namespace General.WPF
 
         private void Cancel()
         {
-            Trace.WriteLine($"{nameof(TreeViewItem)}.{nameof(Cancel)}: try to cancel edit of {this.Header}");
+            Tracer.Log($"{nameof(TreeViewItem)}.{nameof(Cancel)}: try to cancel edit of {this.Header}");
 
             TextBox? inputBox = this.Template?.FindName("InputBox", this) as TextBox;
             if (inputBox is not null)

@@ -3,6 +3,7 @@
                     xmlns:local="clr-namespace:General.WPF">
     <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
     <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
+    <local:EqualityConverter x:Key="EqualityConverter"/>
     <!--boolean to Visibility-->
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
     <local:InverseBooleanToVisibilityCollapsedConverter x:Key="InverseBooleanToVisibilityCollapsedConverter"/>

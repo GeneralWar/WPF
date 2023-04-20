@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\General.CSharp\General\General.core.csproj" />
+    <ProjectReference Include="..\General.CSharp\General\General.csproj" />
   </ItemGroup>
 
   <ItemGroup>
