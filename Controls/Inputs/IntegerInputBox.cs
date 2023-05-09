@@ -33,11 +33,6 @@ namespace General.WPF
             return value.ToString();
         }
 
-        protected override int checkValue(int valueFromText)
-        {
-            return valueFromText;
-        }
-
         protected override void reportValueChanging(int value)
         {
             this.ValueChanging?.Invoke(this, value);

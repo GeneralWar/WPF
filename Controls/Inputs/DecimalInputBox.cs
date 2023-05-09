@@ -36,11 +36,6 @@ namespace General.WPF
             return value.ToString(this.StringFormat);
         }
 
-        protected override decimal checkValue(decimal valueFromText)
-        {
-            return valueFromText;
-        }
-
         protected override void reportValueChanging(decimal value)
         {
             this.ValueChanging?.Invoke(this, value);

@@ -8,6 +8,10 @@
       "commandName": "Project",
       "commandLineArgs": "--test NumberInput"
     },
+    "PercentInput": {
+      "commandName": "Project",
+      "commandLineArgs": "--test PercentInput"
+    },
     "CheckBoxExpander": {
       "commandName": "Project",
       "commandLineArgs": "--test CheckBoxExpander"

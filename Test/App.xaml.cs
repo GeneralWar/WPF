@@ -23,6 +23,9 @@ namespace Test
                 case "NumberInput":
                     new NumberInputTestWindow().Show();
                     break;
+                case "PercentInput":
+                    new PercentInputTestWindow().Show();
+                    break;
                 case "CheckBoxExpander":
                     new CheckBoxExpanderWindow().Show();
                     break;

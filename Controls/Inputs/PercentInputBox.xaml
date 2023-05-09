@@ -27,10 +27,10 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="18"/>
+                                    <ColumnDefinition Width="12"/>
                                 </Grid.ColumnDefinitions>
-                                <ScrollViewer Grid.Column="0" x:Name="PART_ContentHost" VerticalAlignment="Center" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
-                                <Label Grid.Column="1" Padding="0" VerticalAlignment="Center">%</Label>
+                                <ScrollViewer Grid.Column="0" x:Name="PART_ContentHost" HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:PercentInputBox}}, Path=HorizontalAlignment}" VerticalAlignment="Center" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                <Label Grid.Column="1" Padding="0" HorizontalAlignment="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:PercentInputBox}}, Path=HorizontalAlignment}" VerticalAlignment="Center">%</Label>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>

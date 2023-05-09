@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +8,21 @@ using System.Windows.Input;
 
 namespace General.WPF
 {
+    internal class DefaultNumberInputValueTextConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value?.ToString() ?? "0";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            double d;
+            double.TryParse(value as string ?? "", out d);
+            return d;
+        }
+    }
+
     public abstract class NumberInputBox<ValueType> : TextBox where ValueType : struct
     {
         static public readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>));
@@ -21,18 +37,21 @@ namespace General.WPF
 
         public NumberInputBox()
         {
-            InputScope scope = new InputScope();
-            scope.Names.Add(new InputScopeName { NameValue = InputScopeNameValue.Number });
-            this.InputScope = scope;
             this.VerticalAlignment = VerticalAlignment.Center;
             this.VerticalContentAlignment = VerticalAlignment.Center;
 
             Binding binding = new Binding();
             binding.Source = this;
-            binding.Path = new PropertyPath("Value");
+            binding.Path = new PropertyPath(ValueProperty.Name);
+            binding.Converter = this.getValueTextConverter();
             this.SetBinding(TextProperty, binding);
 
             this.updateText(this.Value, true, null);
+        }
+
+        protected virtual IValueConverter getValueTextConverter()
+        {
+            return new DefaultNumberInputValueTextConverter(); ;
         }
 
         /// <summary>
@@ -43,6 +62,22 @@ namespace General.WPF
         protected abstract string checkString(ValueType value);
 
         protected abstract bool TryParse(string text, out ValueType value);
+
+        protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+        {
+            base.OnPreviewTextInput(e);
+
+            /// InputScope cannot allow both digits and negative value, so handle text input here
+
+            string text = this.Text.Insert(this.CaretIndex, e.Text);
+
+            ValueType value;
+            if (!this.TryParse(text, out value))
+            {
+                e.Handled = true;
+                return;
+            }
+        }
 
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
@@ -196,30 +231,7 @@ namespace General.WPF
                 //return;
             }
 
-            ValueType finalValue = this.checkValue(value);
-            //string expectedString = this.shortenText(this.checkString(finalValue));
-            //if (this.Text != expectedString)
-            //{
-            //    if (this.Text.EndsWith('.') && 1 == this.Text.Count('.'))
-            //    {
-            //        return;
-            //    }
-
-            //    int index = expectedString.IndexOf(this.Text);
-            //    if (e.Changes.All(c => c.AddedLength > 0 && c.RemovedLength > 0))
-            //    {
-            //        ++index;
-            //    }
-            //    if (index < 1)
-            //    {
-            //        index = this.CaretIndex;
-            //    }
-            //    this.Text = expectedString;
-            //    this.CaretIndex = index;
-            //    return;
-            //}
-
-            this.updateDataChanging(finalValue);
+            this.updateDataChanging(value);
 
             int caretIndex = change.Offset + change.AddedLength;
             if (text.StartsWith('0') && "0" != text)
@@ -231,13 +243,6 @@ namespace General.WPF
             this.updateText(text, false);
             this.CaretIndex = Math.Max(0, caretIndex);
         }
-
-        /// <summary>
-        /// Check final value for current control
-        /// </summary>
-        /// <param name="valueFromText">Value parsed from TextBox</param>
-        /// <returns>The final value calculated by current control</returns>
-        protected abstract ValueType checkValue(ValueType valueFromText);
 
         protected abstract void reportValueChanging(ValueType value);
         protected abstract void reportValueChanged(ValueType value);
@@ -270,7 +275,7 @@ namespace General.WPF
                     this.CaretIndex = this.Text.Length;
                     if (this.AutoSetValueWhenChanged && this.TryParse(text, out value))
                     {
-                        this.Value = this.checkValue(value);
+                        this.Value = value;
                     }
                 }
                 else
@@ -307,13 +312,6 @@ namespace General.WPF
         /// </summary>
         public event OnValueChange? ValueChanged = null;
 
-        public NumberInputBox()
-        {
-            InputScope scope = new InputScope();
-            scope.Names.Add(new InputScopeName { NameValue = InputScopeNameValue.Number });
-            this.InputScope = scope;
-        }
-
         protected override bool TryParse(string text, out double value)
         {
             return double.TryParse(text, out value);
@@ -322,11 +320,6 @@ namespace General.WPF
         protected override string checkString(double value)
         {
             return value.ToString(this.StringFormat);
-        }
-
-        protected override double checkValue(double valueFromText)
-        {
-            return valueFromText;
         }
 
         protected override void reportValueChanging(double value)
