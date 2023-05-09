@@ -1,8 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:General.WPF">
-    <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
-    <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
     <local:EqualityConverter x:Key="EqualityConverter"/>
     <!--boolean to Visibility-->
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
@@ -11,9 +9,23 @@
     <local:InverseBooleanToVisibilityHiddenConverter x:Key="InverseBooleanToVisibilityHiddenConverter"/>
     <!--number to Visibility-->
     <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
-    <!--float to string-->
+    <!--number to Thickness-->
+    <local:NumberToLeftThicknessConverter x:Key="NumberToLeftThicknessConverter"/>
+    <local:NumberToRightThicknessConverter x:Key="NumberToRightThicknessConverter"/>
+    <local:NumberToTopThicknessConverter x:Key="NumberToTopThicknessConverter"/>
+    <local:NumberToBottomThicknessConverter x:Key="NumberToBottomThicknessConverter"/>
+    <local:NumberToHorizontalThicknessConverter x:Key="NumberToHorizontalThicknessConverter"/>
+    <local:NumberToVerticalThicknessConverter x:Key="NumberToVerticalThicknessConverter"/>
+    <local:NumberToGridLengthPixelConverter x:Key="NumberToGridLengthPixelConverter"/>
+    <local:NumberToGridLengthStarConverter x:Key="NumberToGridLengthStarConverter"/>
+    <!--string converters-->
     <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
     <local:DecimalToStringConverter x:Key="DecimalToStringConverter"/>
+    <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
+    <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
+    <local:UriStringConverter x:Key="UriStringConverter"/>
+    <!--uri converters-->
+    <local:UriUnescapeConverter x:Key="UriUnescapeConverter"/>
     <!--number to boolean-->
     <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
     <!--selection to enable-->

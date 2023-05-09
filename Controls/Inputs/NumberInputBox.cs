@@ -1,37 +1,57 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace General.WPF
 {
-    public abstract class NumberInputBox<T> : TextBox where T : struct
+    internal class DefaultNumberInputValueTextConverter : IValueConverter
     {
-        static protected readonly DependencyProperty PROPERTY_VALUE = DependencyProperty.Register(nameof(NumberInputBox<T>.Value), typeof(T), typeof(NumberInputBox<T>), new FrameworkPropertyMetadata(default(T), OnValuePropertyChange)); 
-        
-        static private void OnValuePropertyChange(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            NumberInputBox<T>? input = d as NumberInputBox<T>;
-            if (input is null)
-            {
-                return;
-            }
-
-            input.Value = (T)e.NewValue;
+            return value?.ToString() ?? "0";
         }
 
-        public T Value { get => (T)this.GetValue(PROPERTY_VALUE); set { this.SetValue(PROPERTY_VALUE, value); this.updateText(value, null); } }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            double d;
+            double.TryParse(value as string ?? "", out d);
+            return d;
+        }
+    }
+
+    public abstract class NumberInputBox<ValueType> : TextBox where ValueType : struct
+    {
+        static public readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.Value), typeof(ValueType), typeof(NumberInputBox<ValueType>));
+
+        public ValueType Value { get => (ValueType)this.GetValue(ValueProperty); set { this.updateData(value); this.updateText(value, true, null); } }
+        private bool mTextUpdating = false;
+
+        static public readonly DependencyProperty AutoSetValueWhenChangedProperty = DependencyProperty.Register(nameof(NumberInputBox<ValueType>.AutoSetValueWhenChanged), typeof(bool), typeof(NumberInputBox<ValueType>), new PropertyMetadata(true));
+        public bool AutoSetValueWhenChanged { get => (bool)this.GetValue(AutoSetValueWhenChangedProperty); set { this.SetValue(AutoSetValueWhenChangedProperty, value); } }
 
         public event RoutedEventHandler? EnterDown = null;
 
         public NumberInputBox()
         {
-            InputScope scope = new InputScope();
-            scope.Names.Add(new InputScopeName { NameValue = InputScopeNameValue.Number });
-            this.InputScope = scope;
             this.VerticalAlignment = VerticalAlignment.Center;
             this.VerticalContentAlignment = VerticalAlignment.Center;
+
+            Binding binding = new Binding();
+            binding.Source = this;
+            binding.Path = new PropertyPath(ValueProperty.Name);
+            binding.Converter = this.getValueTextConverter();
+            this.SetBinding(TextProperty, binding);
+
+            this.updateText(this.Value, true, null);
+        }
+
+        protected virtual IValueConverter getValueTextConverter()
+        {
+            return new DefaultNumberInputValueTextConverter(); ;
         }
 
         /// <summary>
@@ -39,9 +59,25 @@ namespace General.WPF
         /// </summary>
         /// <param name="value">The real value that current control holds</param>
         /// <returns>The display text for TextBox</returns>
-        protected abstract string checkString(T value);
+        protected abstract string checkString(ValueType value);
 
-        protected abstract bool TryParse(string text, out T value);
+        protected abstract bool TryParse(string text, out ValueType value);
+
+        protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+        {
+            base.OnPreviewTextInput(e);
+
+            /// InputScope cannot allow both digits and negative value, so handle text input here
+
+            string text = this.Text.Insert(this.CaretIndex, e.Text);
+
+            ValueType value;
+            if (!this.TryParse(text, out value))
+            {
+                e.Handled = true;
+                return;
+            }
+        }
 
         protected override void OnTextInput(TextCompositionEventArgs e)
         {
@@ -57,11 +93,37 @@ namespace General.WPF
             }
         }
 
-        private void updateText(T value, TextChangedEventArgs? e)
+        private string shortenText(string text)
         {
-            string targetText = this.checkString(value);
+            if ("0" == text)
+            {
+                return text;
+            }
+            return text.Contains('.') ? text.TrimEnd('0').TrimEnd('.') : text;
+        }
+
+        /// <summary>
+        /// update text only, without emiting value change event
+        /// </summary>
+        /// <param name="text"></param>
+        public void UpdateText(string text)
+        {
+            this.updateText(text, true);
+        }
+
+        private void updateText(string text, bool trim)
+        {
+            mTextUpdating = true;
+            this.Dispatcher.Invoke(() => this.Text = trim ? this.shortenText(text) : text);
+            mTextUpdating = false;
+        }
+
+        private void updateText(ValueType value, bool trim, TextChangedEventArgs? e)
+        {
             string currentText = this.Text;
-            this.Text = targetText;
+            string targetText = this.checkString(value);
+            this.updateText(targetText, trim);
+
             if (e is not null)
             {
                 if (0 == e.Changes.Count)
@@ -90,50 +152,113 @@ namespace General.WPF
             }
         }
 
+        private void updateData(ValueType value)
+        {
+            this.SetValue(ValueProperty, value);
+        }
+
+        private void updateDataChanging(ValueType value)
+        {
+            if (this.Value.Equals(value))
+            {
+                return;
+            }
+
+            //this.updateData(value); do not update data manually, to prevent removing binding expressions
+            this.reportValueChanging(value);
+        }
+
         protected override void OnTextChanged(TextChangedEventArgs e)
         {
             base.OnTextChanged(e);
 
-            T value;
-            if (!this.TryParse(this.Text, out value))
+            if (mTextUpdating)
             {
-                this.updateText(this.Value, e);
                 return;
             }
 
-            T finalValue = this.checkValue(value);
-            string expectedString = this.checkString(finalValue);
-            if (this.Text != expectedString)
+            TextChange change = e.Changes.First();
+
+            ValueType value;
+            string text = this.Text;
+            if (string.IsNullOrWhiteSpace(text))
             {
-                int index = expectedString.IndexOf(this.Text);
-                if (e.Changes.All(c => c.AddedLength > 0 && c.RemovedLength > 0))
-                {
-                    ++index;
-                }
-                if (index < 1)
-                {
-                    index = this.CaretIndex;
-                }
-                this.Text = expectedString;
-                this.CaretIndex = index;
+                this.updateDataChanging(default(ValueType));
+                this.updateText("", false);
                 return;
             }
 
-            if (!this.Value.Equals(finalValue))
+            if (!this.TryParse(text, out value))
             {
-                this.Value = finalValue;
-                this.reportValueChange(finalValue);
+                if (text.Count('-') == text.Length)
+                {
+                    text = "-";
+                }
+
+                if ("-" == text)
+                {
+                    this.updateDataChanging(value);
+                    this.updateText(text, false);
+                    this.CaretIndex = text.Length;
+                    return;
+                }
+
+                if ("." == text)
+                {
+                    this.updateDataChanging(default(ValueType));
+                    return;
+                }
+
+                if (text.EndsWith('.') && text.Count('.') > 1)
+                {
+                    text = text.Substring(0, text.Length - 1);
+                    this.updateDataChanging(value);
+                    this.updateText(text, false);
+                    this.CaretIndex = text.Length;
+                    return;
+                }
+
+                string previousText = text.Remove(change.Offset, change.AddedLength);
+                if (this.TryParse(previousText, out value))
+                {
+                    this.updateText(previousText, false);
+                    this.CaretIndex = previousText.Length;
+                    return;
+                }
+
+                throw new NotImplementedException();
+                //this.updateText(this.Value, false, e);
+                //return;
             }
+
+            this.updateDataChanging(value);
+
+            int caretIndex = change.Offset + change.AddedLength;
+            if (text.StartsWith('0') && "0" != text)
+            {
+                string shortText = text.TrimStart('0');
+                caretIndex -= text.Length - shortText.Length;
+                text = shortText;
+            }
+            this.updateText(text, false);
+            this.CaretIndex = Math.Max(0, caretIndex);
         }
 
-        /// <summary>
-        /// Check final value for current control
-        /// </summary>
-        /// <param name="valueFromText">Value parsed from TextBox</param>
-        /// <returns>The final value calculated by current control</returns>
-        protected abstract T checkValue(T valueFromText);
+        protected abstract void reportValueChanging(ValueType value);
+        protected abstract void reportValueChanged(ValueType value);
 
-        protected abstract void reportValueChange(T value);
+        private ValueType checkValueFromText()
+        {
+            ValueType value;
+            return this.TryParse(this.Text, out value) ? value : this.Value;
+        }
+
+        private void reportValueChanged()
+        {
+            ValueType value = this.checkValueFromText();
+            this.updateText(this.Value, true, null);
+            this.reportValueChanged(value);
+        }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
@@ -141,26 +266,51 @@ namespace General.WPF
 
             if (Key.Enter == e.Key)
             {
+                FrameworkElement? ancestor = this.FindAncestor<FrameworkElement>(false, e => e.Focusable);
+                if (ancestor is null || (ancestor is Window && this.GetTopWindow() == ancestor))
+                {
+                    ValueType value;
+                    string text = this.Text;
+                    this.reportValueChanged();
+                    this.CaretIndex = this.Text.Length;
+                    if (this.AutoSetValueWhenChanged && this.TryParse(text, out value))
+                    {
+                        this.Value = value;
+                    }
+                }
+                else
+                {
+                    ancestor.Focus();
+                }
+
                 this.EnterDown?.Invoke(this, e);
             }
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            base.OnLostFocus(e);
+            this.reportValueChanged();
+        }
+
+        public override string ToString()
+        {
+            return $"{this.GetType().FullName}: {this.Value}";
         }
     }
 
     public class NumberInputBox : NumberInputBox<double>
     {
-        public delegate void OnValueChange(NumberInputBox input, double value);
-
         public int Precision { get; set; } = 2;
         protected string StringFormat => $"F{this.Precision}";
 
-        public event OnValueChange? ValueChange = null;
-
-        public NumberInputBox()
-        {
-            InputScope scope = new InputScope();
-            scope.Names.Add(new InputScopeName { NameValue = InputScopeNameValue.Number });
-            this.InputScope = scope;
-        }
+        public delegate void OnValueChange(NumberInputBox input, double value);
+        public event OnValueChange? ValueChanging = null;
+        /// <summary>
+        /// Only report data from text when user press Enter or this control lost focus, 
+        /// cached data will not update, and will reset text with cached data before this event
+        /// </summary>
+        public event OnValueChange? ValueChanged = null;
 
         protected override bool TryParse(string text, out double value)
         {
@@ -172,14 +322,14 @@ namespace General.WPF
             return value.ToString(this.StringFormat);
         }
 
-        protected override double checkValue(double valueFromText)
+        protected override void reportValueChanging(double value)
         {
-            return valueFromText;
+            this.ValueChanging?.Invoke(this, value);
         }
 
-        protected override void reportValueChange(double value)
+        protected override void reportValueChanged(double value)
         {
-            this.ValueChange?.Invoke(this, value);
+            this.ValueChanged?.Invoke(this, value);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,8 +9,12 @@ namespace General.WPF
     public partial class IntegerInputBox : NumberInputBox<int>
     {
         public delegate void OnValueChange(IntegerInputBox input, int value);
-
-        public event OnValueChange? ValueChange = null;
+        public event OnValueChange? ValueChanging = null;
+        /// <summary>
+        /// Only report data from text when user press Enter or this control lost focus, 
+        /// cached data will not update, and will reset text with cached data before this event
+        /// </summary>
+        public event OnValueChange? ValueChanged = null;
 
         public IntegerInputBox()
         {
@@ -28,14 +33,14 @@ namespace General.WPF
             return value.ToString();
         }
 
-        protected override int checkValue(int valueFromText)
+        protected override void reportValueChanging(int value)
         {
-            return valueFromText;
+            this.ValueChanging?.Invoke(this, value);
         }
 
-        protected override void reportValueChange(int value)
+        protected override void reportValueChanged(int value)
         {
-            this.ValueChange?.Invoke(this, value);
+            this.ValueChanged?.Invoke(this, value);
         }
     }
 }

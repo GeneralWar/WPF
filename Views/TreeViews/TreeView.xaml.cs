@@ -1,8 +1,11 @@
-﻿using System;
+﻿using General.WPF.Helpers;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,6 +23,8 @@ namespace General.WPF
 
         public Brush InactiveSelectionBackground { get; set; } = new SolidColorBrush(Color.FromArgb(128, 144, 144, 144));
 
+        IEnumerable<IMultipleSelectionsItem> IMultipleSelectionsCollection.Items => this.Items.OfType<IMultipleSelectionsItem>();
+
         private HashSet<IMultipleSelectionsItem> mSelectedItems = new HashSet<IMultipleSelectionsItem>();
         IEnumerable<IMultipleSelectionsItem> IMultipleSelectionsCollection.SelectedItems => mSelectedItems;
         public IEnumerable<TreeViewItem> SelectedItems => mSelectedItems.Where(i => i is TreeViewItem).Cast<TreeViewItem>().ToArray();
@@ -36,6 +41,8 @@ namespace General.WPF
 
         ITreeViewItemCollection? ITreeViewItemCollection.Parent => this.Parent as ITreeViewItemCollection;
 
+        public IMultipleSelectionsItem? LastSelected { get; private set; }
+
         int ITreeViewItemCollection.SiblingIndex => -1;
 
         public delegate void OnDragEventDelegate(DragEvent e);
@@ -44,6 +51,8 @@ namespace General.WPF
 
         private bool mDragCancel = false;
         private Border? mDragEffectMask = null;
+
+        private bool mIsAppending = false;
 
         public TreeView()
         {
@@ -125,9 +134,19 @@ namespace General.WPF
                     if (item?.AllowDrop ?? false)
                     {
                         item.AllowDrop = false;
-                        DragDropEffects result = DragDrop.DoDragDrop(item, item, DragDropEffects.All);
-                        mDragCancel = DragDropEffects.None == result;
-                        item.AllowDrop = true;
+                        try
+                        {
+                            DragDropEffects result = DragDrop.DoDragDrop(item, item.ToDragData(), DragDropEffects.Move | DragDropEffects.Link | DragDropEffects.Copy);
+                            mDragCancel = DragDropEffects.None == result;
+                        }
+                        catch (Exception exception)
+                        {
+                            Tracer.Exception(exception);
+                        }
+                        finally
+                        {
+                            item.AllowDrop = true;
+                        }
 
                         this.hideDragMask();
                     }
@@ -154,14 +173,14 @@ namespace General.WPF
             TreeViewItem? sourceItem;
             ITreeViewItemCollection? targetItem;
             DragModes mode = this.checkDragMode(e, out sourceItem, out targetItem);
-            if (DragModes.None == mode || targetItem is null || sourceItem is null)
+            if (DragModes.None == mode || targetItem is null)
             {
                 e.Effects = DragDropEffects.None;
                 this.hideDragMask();
                 return;
             }
 
-            DragEvent drag = new DragEvent(sourceItem, targetItem, mode);
+            DragEvent drag = new DragEvent(sourceItem ?? e.GetDragSource(), targetItem, mode);
             this.onDrop?.Invoke(drag);
             if (drag.Canceled)
             {
@@ -187,7 +206,7 @@ namespace General.WPF
 
         private DragModes checkDragMode(DragEventArgs e, out TreeViewItem? sourceItem, out ITreeViewItemCollection? targetItem)
         {
-            sourceItem = e.Data.GetData(typeof(TreeViewItem)) as TreeViewItem;
+            sourceItem = e.GetDragSource() as TreeViewItem;
             targetItem = this.InputHitTest(e.GetPosition(this))?.FindAncestor<ITreeViewItemCollection>();
             if (targetItem is null)
             {
@@ -340,6 +359,7 @@ namespace General.WPF
             if (selectable is not null && selectable.IsSelected)
             {
                 mSelectedItems.Add(selectable);
+                this.LastSelected = selectable;
             }
         }
 
@@ -360,75 +380,98 @@ namespace General.WPF
             return path.ToArray();
         }
 
+        private bool checkShouldSwitchDirection(IMultipleSelectionsItem from, IMultipleSelectionsItem to)
+        {
+            if (from == to)
+            {
+                return false;
+            }
+
+            string fromID = this.getPathID(from);
+            string toID = this.getPathID(to);
+            return string.Compare(fromID, toID) > 0;
+        }
+
         private void selectItems(IMultipleSelectionsItem from, IMultipleSelectionsItem to)
+        {
+            this.append(from, false);
+
+            if (from == to)
+            {
+                return;
+            }
+
+            if (this.checkShouldSwitchDirection(from, to))
+            {
+                this.selectItems(to, from);
+                return;
+            }
+
+            if (from.Parent == to.Parent)
+            {
+                IEnumerator? enumerator = from.Parent.GetEnumerator();
+                if (enumerator is null)
+                {
+                    return;
+                }
+
+                while (enumerator.MoveNext() && enumerator.Current != from) ;
+                this.append(from, true);
+
+                while (enumerator.MoveNext() && enumerator.Current != to)
+                {
+                    IMultipleSelectionsItem? i = enumerator.Current as IMultipleSelectionsItem;
+                    if (i is not null)
+                    {
+                        this.append(i, true);
+                    }
+                }
+                this.append(to, false);
+            }
+            else
+            {
+                this.enumerateTo(from, to, i => this.append(i, false));
+            }
+
+            mLastOperatedItem = to;
+        }
+
+        private void enumerateTo(IMultipleSelectionsItem from, IMultipleSelectionsItem to, Action<IMultipleSelectionsItem>? handler)
         {
             if (from == to)
             {
                 return;
             }
 
-            TreeViewItem[] fromPath = this.getItemPath(from as TreeViewItem);
-            TreeViewItem[] toPath = this.getItemPath(to as TreeViewItem);
-
-            int forkDepth = 0;
-            ItemCollection forkCollection = this.Items;
-            int shallow = Math.Min(fromPath.Length, toPath.Length);
-            for (int i = 0; i < shallow; ++i, ++forkDepth)
+            DependencyObject? fromObject = from as DependencyObject;
+            DependencyObject? toObject = to as DependencyObject;
+            if (fromObject is null || toObject is null)
             {
-                if (fromPath[i] != toPath[i])
-                {
-                    break;
-                }
-                forkCollection = fromPath[i].Items;
+                return;
             }
 
-            int fromIndex = forkCollection.IndexOf(fromPath[forkDepth]);
-            int toIndex = forkCollection.IndexOf(toPath[forkDepth]);
-            int minIndex = Math.Min(fromIndex, toIndex);
-            int maxIndex = Math.Max(fromIndex, toIndex);
-            List<IMultipleSelectionsItem> items = new List<IMultipleSelectionsItem>();
-            for (int i = minIndex; i <= maxIndex; ++i)
+            EnumerateTo enumerator = new EnumerateTo(fromObject, toObject);
+            enumerator.Enumerate(i =>
             {
-                TreeViewItem? item = forkCollection[i] as TreeViewItem;
-                if (item is null)
+                IMultipleSelectionsItem? item = i as IMultipleSelectionsItem;
+                if (item is not null)
                 {
-                    continue;
+                    handler?.Invoke(item);
                 }
-                this.enumerateItems(item, items);
-            }
-
-            fromIndex = items.IndexOf(from);
-            toIndex = items.IndexOf(to);
-            minIndex = Math.Min(fromIndex, toIndex);
-            maxIndex = Math.Max(fromIndex, toIndex);
-
-            if (maxIndex > minIndex)
-            {
-                foreach (IMultipleSelectionsItem item in items.Skip(minIndex).Take(maxIndex - minIndex + 1))
-                {
-                    (this as IMultipleSelectionsCollection).Append(item);
-                }
-                this.reportSelectedItemsChange();
-            }
-            mLastOperatedItem = to;
+            });
         }
 
-        private void enumerateItems(TreeViewItem root, List<IMultipleSelectionsItem> items)
+        private string getPathID(IMultipleSelectionsItem item)
         {
-            items.Add(root);
-            if (root.IsExpanded)
+            StringBuilder builder = new StringBuilder();
+            FrameworkElement? element = item as FrameworkElement;
+            while (element is not null && this != element)
             {
-                foreach (object i in root.Items)
-                {
-                    TreeViewItem? item = i as TreeViewItem;
-                    if (item is null)
-                    {
-                        continue;
-                    }
-
-                    this.enumerateItems(item, items);
-                }
+                builder.Append('_');
+                builder.Append(element.GetSiblingIndex());
+                element = element.Parent as FrameworkElement;
             }
+            return builder.Remove(0, 1).ToString().Reverse();
         }
 
         private void reportSelectedItemsChange()
@@ -482,6 +525,16 @@ namespace General.WPF
 
         void IMultipleSelectionsCollection.Select(IMultipleSelectionsItem item)
         {
+            if (mIsAppending)
+            {
+                return;
+            }
+
+            if (1 == mSelectedItems.Count && mSelectedItems.First() == item)
+            {
+                return;
+            }
+
             foreach (IMultipleSelectionsItem record in mSelectedItems)
             {
                 if (record == item)
@@ -498,29 +551,63 @@ namespace General.WPF
 
         void IMultipleSelectionsCollection.SelectTo(IMultipleSelectionsItem item)
         {
-            if (mLastOperatedItem == item)
+            if (this.LastSelected == item)
             {
                 return;
             }
 
-            if (mLastOperatedItem is not null)
+            if (this.LastSelected is not null)
             {
-                this.selectItems(mLastOperatedItem, item);
+                this.selectItems(this.LastSelected, item);
             }
         }
 
         void IMultipleSelectionsCollection.Append(IMultipleSelectionsItem item)
         {
+            this.append(item, false);
+        }
+
+        private void append(IMultipleSelectionsItem item, bool recursively)
+        {
+            mIsAppending = true;
             mSelectedItems.Add(item);
-            item.IsSelected = true;
+            this.LastSelected = item;
             (item as FrameworkElement)?.Focus();
             mLastOperatedItem = item;
+            item.IsSelected = true;
             this.reportSelectedItemsChange();
+            mIsAppending = false;
+
+            if (recursively)
+            {
+                DependencyObject? parent = item as DependencyObject;
+                if (parent is not null)
+                {
+                    IEnumerator? enumerator = parent.GetEnumerator();
+                    while (enumerator is not null && enumerator.MoveNext())
+                    {
+                        IMultipleSelectionsItem? child = enumerator.Current as IMultipleSelectionsItem;
+                        if (child is not null)
+                        {
+                            this.append(child, recursively);
+                        }
+                    }
+                }
+            }
         }
 
         void IMultipleSelectionsCollection.Unselect(IMultipleSelectionsItem item)
         {
-            mSelectedItems.Remove(item);
+            if (mIsAppending)
+            {
+                return;
+            }
+
+            if (!mSelectedItems.Remove(item))
+            {
+                return;
+            }
+
             item.IsSelected = false;
             if (this.SelectedItem == item)
             {
@@ -528,6 +615,11 @@ namespace General.WPF
             }
 
             mLastOperatedItem = item;
+            if (this.LastSelected == item)
+            {
+                this.LastSelected = null;
+            }
+
             this.reportSelectedItemsChange();
         }
 

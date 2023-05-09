@@ -1,0 +1,58 @@
+﻿<Window x:Class="Genera.WPF.Test.TreeViewTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Genera.WPF.Test"
+        xmlns:general="clr-namespace:General.WPF;assembly=General.WPF"
+        mc:Ignorable="d"
+        Title="TreeViewTestWindow" Height="600" Width="360" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <general:TreeView x:Name="mTreeView" AllowItemDrag="True">
+            <general:TreeViewItem Header="1">
+                <general:TreeViewItem Header="11"></general:TreeViewItem>
+                <general:TreeViewItem Header="12"></general:TreeViewItem>
+                <general:TreeViewItem Header="13"></general:TreeViewItem>
+            </general:TreeViewItem>
+            <general:TreeViewItem Header="2" IsExpanded="True">
+                <general:TreeViewItem Header="21"></general:TreeViewItem>
+                <general:TreeViewItem Header="22">
+                    <general:TreeViewItem Header="221"></general:TreeViewItem>
+                    <general:TreeViewItem Header="222"></general:TreeViewItem>
+                    <general:TreeViewItem Header="223"></general:TreeViewItem>
+                </general:TreeViewItem>
+                <general:TreeViewItem Header="23"></general:TreeViewItem>
+            </general:TreeViewItem>
+            <general:TreeViewItem Header="3"></general:TreeViewItem>
+            <general:TreeViewItem Header="4">
+                <general:TreeViewItem Header="41"></general:TreeViewItem>
+                <general:TreeViewItem Header="42"></general:TreeViewItem>
+                <general:TreeViewItem Header="Test"></general:TreeViewItem>
+                <general:TreeViewItem Header="43"></general:TreeViewItem>
+            </general:TreeViewItem>
+        </general:TreeView>
+        <!--<TreeView x:Name="mTreeView">
+            <TreeViewItem Header="1" MouseDoubleClick="onItemMouseDoubleClick">
+                <TreeViewItem Header="11"></TreeViewItem>
+                <TreeViewItem Header="12"></TreeViewItem>
+                <TreeViewItem Header="13"></TreeViewItem>
+            </TreeViewItem>
+            <TreeViewItem Header="2" IsExpanded="True">
+                <TreeViewItem Header="21"></TreeViewItem>
+                <TreeViewItem Header="22">
+                    <TreeViewItem Header="221"></TreeViewItem>
+                    <TreeViewItem Header="222"></TreeViewItem>
+                    <TreeViewItem Header="223"></TreeViewItem>
+                </TreeViewItem>
+                <TreeViewItem Header="23"></TreeViewItem>
+            </TreeViewItem>
+            <TreeViewItem Header="3"></TreeViewItem>
+            <TreeViewItem Header="4">
+                <TreeViewItem Header="41"></TreeViewItem>
+                <TreeViewItem Header="42"></TreeViewItem>
+                <TreeViewItem Header="Test"></TreeViewItem>
+                <TreeViewItem Header="43"></TreeViewItem>
+            </TreeViewItem>
+        </TreeView>-->
+    </Grid>
+</Window>

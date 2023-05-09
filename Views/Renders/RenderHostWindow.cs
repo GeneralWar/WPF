@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using System.Windows.Forms;
+using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
 
 namespace General.WPF
 {
@@ -16,9 +12,22 @@ namespace General.WPF
         public delegate void OnWindowCreate(IntPtr handle);
         public event OnWindowCreate? onWindowCreate = null;
 
+        public RenderHostWindow()
+        {
+            this.HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch;
+            this.VerticalAlignment = System.Windows.VerticalAlignment.Stretch;
+        }
+
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
-            IntPtr handle = CreateWindowEx(0, "static", "RenderView", WS_CHILD | WS_VISIBLE, 0, 0, 800, 600, hwndParent.Handle, IntPtr.Zero, Process.GetCurrentProcess().Handle, IntPtr.Zero);
+            int width = 0, height = 0;
+            foreach (Screen screen in Screen.AllScreens)
+            {
+                width = Math.Max(width, screen.Bounds.Width);
+                height = Math.Max(height, screen.Bounds.Height);
+            }
+
+            IntPtr handle = CreateWindowEx(0, "static", "RenderView", WS_CHILD | WS_VISIBLE, 0, 0, width, height, hwndParent.Handle, IntPtr.Zero, Process.GetCurrentProcess().Handle, IntPtr.Zero);
             this.onWindowCreate?.Invoke(handle);
             return new HandleRef(this, handle);
         }

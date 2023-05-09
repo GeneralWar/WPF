@@ -20,9 +20,13 @@
 
   <ItemGroup>
     <Compile Remove="Samples\**" />
+    <Compile Remove="Test\**" />
     <EmbeddedResource Remove="Samples\**" />
+    <EmbeddedResource Remove="Test\**" />
     <None Remove="Samples\**" />
+    <None Remove="Test\**" />
     <Page Remove="Samples\**" />
+    <Page Remove="Test\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +38,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Controls\Inputs\HeaderedIntegerInputBox.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Controls\Inputs\PercentInputBox.xaml.cs">
       <SubType>Code</SubType>
     </Compile>

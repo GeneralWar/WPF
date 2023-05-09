@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "TreeView": {
+      "commandName": "Project",
+      "commandLineArgs": "--test TreeView"
+    },
+    "NumberInput": {
+      "commandName": "Project",
+      "commandLineArgs": "--test NumberInput"
+    },
+    "PercentInput": {
+      "commandName": "Project",
+      "commandLineArgs": "--test PercentInput"
+    },
+    "CheckBoxExpander": {
+      "commandName": "Project",
+      "commandLineArgs": "--test CheckBoxExpander"
+    }
+  }
+}

@@ -171,7 +171,7 @@ namespace General.WPF
 
         private void onDragOver(object sender, DragEventArgs e)
         {
-            TabItem? item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            TabItem? item = e.GetDragSource() as TabItem;
             if (item is null)
             {
                 return;
@@ -197,7 +197,7 @@ namespace General.WPF
 
         private void onDrop(object sender, DragEventArgs e)
         {
-            TabItem? item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            TabItem? item = e.GetDragSource() as TabItem;
             if (item is null)
             {
                 return;
@@ -248,7 +248,7 @@ namespace General.WPF
 
         private void createNewWindow(DragEventArgs e)
         {
-            TabItem? item = e.Data.GetData(typeof(TabItem)) as TabItem;
+            TabItem? item = e.GetDragSource() as TabItem;
             if (item is null)
             {
                 throw new InvalidCastException();
@@ -428,7 +428,7 @@ namespace General.WPF
                 return;
             }
 
-            TabItem? dropItem = e.Data.GetData(typeof(TabItem)) as TabItem;
+            TabItem? dropItem = e.GetDragSource() as TabItem;
             if (dropItem is null)
             {
                 return;
