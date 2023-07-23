@@ -1,13 +1,23 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:General.WPF">
+    <!--value to Boolean-->
     <local:EqualityConverter x:Key="EqualityConverter"/>
-    <!--boolean to Visibility-->
+    <local:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
+    <!--value to Visibility-->
+    <local:ObjectToVisibilityCollapsedConverter x:Key="ObjectToVisibilityCollapsedConverter"/>
+    <local:InverseObjectToVisibilityCollapsedConverter x:Key="InverseObjectToVisibilityCollapsedConverter"/>
+    <local:ObjectToVisibilityHiddenConverter x:Key="ObjectToVisibilityHiddenConverter"/>
+    <local:InverseObjectToVisibilityHiddenConverter x:Key="InverseObjectToVisibilityHiddenConverter"/>
+    <local:ObjectEqualityToVisibilityCollapsedConverter x:Key="ObjectEqualityToVisibilityCollapsedConverter"/>
+    <local:InverseObjectEqualityToVisibilityCollapsedConverter x:Key="InverseObjectEqualityToVisibilityCollapsedConverter"/>
+    <local:ObjectEqualityToVisibilityHiddenConverter x:Key="ObjectEqualityToVisibilityHiddenConverter"/>
+    <local:InverseObjectEqualityToVisibilityHiddenConverter x:Key="InverseObjectEqualityToVisibilityHiddenConverter"/>
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
     <local:InverseBooleanToVisibilityCollapsedConverter x:Key="InverseBooleanToVisibilityCollapsedConverter"/>
     <local:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter"/>
     <local:InverseBooleanToVisibilityHiddenConverter x:Key="InverseBooleanToVisibilityHiddenConverter"/>
-    <!--number to Visibility-->
     <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
     <!--number to Thickness-->
     <local:NumberToLeftThicknessConverter x:Key="NumberToLeftThicknessConverter"/>
@@ -26,8 +36,6 @@
     <local:UriStringConverter x:Key="UriStringConverter"/>
     <!--uri converters-->
     <local:UriUnescapeConverter x:Key="UriUnescapeConverter"/>
-    <!--number to boolean-->
-    <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
     <!--selection to enable-->
     <local:IListSelectionToEnableConverter x:Key="IListSelectionToEnableConverter"/>
 </ResourceDictionary>
