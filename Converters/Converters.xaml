@@ -14,6 +14,9 @@
     <local:InverseObjectEqualityToVisibilityCollapsedConverter x:Key="InverseObjectEqualityToVisibilityCollapsedConverter"/>
     <local:ObjectEqualityToVisibilityHiddenConverter x:Key="ObjectEqualityToVisibilityHiddenConverter"/>
     <local:InverseObjectEqualityToVisibilityHiddenConverter x:Key="InverseObjectEqualityToVisibilityHiddenConverter"/>
+    <local:ObjectIsNullConverter x:Key="ObjectIsNullConverter"/>
+    <local:ObjectIsNotNullConverter x:Key="ObjectIsNotNullConverter"/>
+    <!--boolean to Visibility-->
     <local:BooleanToVisibilityCollapsedConverter x:Key="BooleanToVisibilityCollapsedConverter"/>
     <local:InverseBooleanToVisibilityCollapsedConverter x:Key="InverseBooleanToVisibilityCollapsedConverter"/>
     <local:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter"/>
