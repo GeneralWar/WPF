@@ -8,12 +8,13 @@ static public partial class Extension
 {
     public static Window? GetTopWindow(this FrameworkElement element)
     {
-        FrameworkElement? item = element;
-        while (null != item && item is not Window)
-        {
-            item = item.GetRealParent() as FrameworkElement;
-        }
-        return item as Window;
+        //FrameworkElement? item = element;
+        //while (null != item && item is not Window)
+        //{
+        //    item = item.GetRealParent() as FrameworkElement;
+        //}
+        //return item as Window;
+        return Window.GetWindow(element);
     }
 
     private static FrameworkElement? GetRealParent(this FrameworkElement element)
