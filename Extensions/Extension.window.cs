@@ -9,4 +9,17 @@ static public partial class Extension
         WindowInteropHelper helper = new WindowInteropHelper(window);
         return window.Dispatcher.Invoke(() => helper.Handle);
     }
+
+    static public bool TrySetDialogResult(this Window window, bool? value)
+    {
+        try
+        {
+            window.DialogResult = value;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
