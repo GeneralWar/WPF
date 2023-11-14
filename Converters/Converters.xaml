@@ -33,10 +33,12 @@
     <local:NumberToGridLengthStarConverter x:Key="NumberToGridLengthStarConverter"/>
     <!--string converters-->
     <local:FloatToStringConverter x:Key="FloatToStringConverter"/>
+    <local:DoubleToStringConverter x:Key="DoubleToStringConverter"/>
     <local:DecimalToStringConverter x:Key="DecimalToStringConverter"/>
     <local:EscapeMnemonicsStringConverter x:Key="EscapeMnemonicsStringConverter"/>
     <local:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
     <local:UriStringConverter x:Key="UriStringConverter"/>
+    <local:DateTimeToStringConverter x:Key="DateTimeToStringConverter"/>
     <!--uri converters-->
     <local:UriUnescapeConverter x:Key="UriUnescapeConverter"/>
     <!--selection to enable-->

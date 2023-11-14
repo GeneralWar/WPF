@@ -36,7 +36,7 @@ namespace General.WPF
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return this.Convert(value, targetType, parameter, culture);
         }
     }
 
