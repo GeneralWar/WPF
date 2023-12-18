@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -45,5 +46,78 @@ static public partial class Extension
             }
             return;
         }
+    }
+    static public List<T> GetAllChildren<T>(this ContentControl control, bool recursively) where T : Control
+    {
+        List<T> items = new List<T>();
+        object content = control.Content;
+        Panel? panel = content as Panel;
+        if (panel is not null)
+        {
+            items.AddRange(panel.GetAllChildren<T>(recursively));
+        }
+        else
+        {
+        }
+        return items;
+    }
+
+    static public List<T> GetAllChildren<T>(this Panel control, bool recursively) where T : Control
+    {
+        List<T> items = new List<T>();
+        foreach (var child in control.Children)
+        {
+            T? t = child as T;
+            if (t is not null)
+            {
+                items.Add(t);
+            }
+
+            Panel? panel = child as Panel;
+            if (recursively && panel is not null)
+            {
+                items.AddRange(GetAllChildren<T>(panel, recursively));
+            }
+        }
+        return items;
+    }
+
+    //static public List<T> GetAllChildren<T>(this Panel control, bool recursively) where T : Control
+    //{
+    //    List<T> items = new List<T>();
+    //    int count = VisualTreeHelper.GetChildrenCount(control);
+    //    for (int i = 0; i < count; ++i)
+    //    {
+    //        var item = VisualTreeHelper.GetChild(control, i);
+    //        if (item is T)
+    //        {
+    //            items.Add(item as T);
+    //            if (recursively)
+    //            {
+    //                items.AddRange(item.GetAllChildren<T>(recursively));
+    //            }
+    //        }
+    //    }
+    //    return items;
+    //}
+
+    static public T? Find<T>(this ItemCollection collection, Func<T, bool> predicate)
+    {
+        int count = collection.Count;
+        for (int i = 0; i < count; ++i)
+        {
+            object o = collection[i];
+            if (o is not T)
+            {
+                continue;
+            }
+
+            T item = (T)o;
+            if (predicate?.Invoke(item) ?? false)
+            {
+                return item;
+            }
+        }
+        return default(T);
     }
 }

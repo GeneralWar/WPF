@@ -43,7 +43,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Label Grid.Column="0" Style="{DynamicResource HeaderLabelLabelStyle}" Content="{Binding  RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:HeaderLabel}}, Path=Header}"/>
-        <Label Grid.Column="1" Style="{DynamicResource HeaderLabelLabelStyle}" Content="{Binding  RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:HeaderLabel}}, Path=Text}"/>
+        <Label Grid.Column="0" Style="{DynamicResource HeaderLabelLabelStyle}" Content="{Binding  RelativeSource={RelativeSource AncestorType={x:Type local:HeaderLabel}}, Path=Header, Mode=OneWay}"/>
+        <Label Grid.Column="1" Style="{DynamicResource HeaderLabelLabelStyle}" Content="{Binding  RelativeSource={RelativeSource AncestorType={x:Type local:HeaderLabel}}, Path=Text, Mode=OneWay}"/>
     </Grid>
 </Label>
