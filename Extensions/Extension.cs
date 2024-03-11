@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Controls;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public void EnumerateChildren(this DependencyObject instance, Action<DependencyObject> action)
     {
@@ -119,5 +121,34 @@ static public partial class Extension
             }
         }
         return default(T);
+    }
+
+    static public bool CheckReverse(this TextChange source, TextChange target)
+    {
+        return source.Offset == target.Offset && source.AddedLength == target.RemovedLength && source.RemovedLength == target.AddedLength;
+    }
+
+    static public void Merge(this TextChange source, TextChange target)
+    {
+        if (source.Offset + source.AddedLength - source.RemovedLength != target.Offset)
+        {
+            throw new InvalidOperationException($"Try to merge two {nameof(TextChange)}s, but information mismatch.");
+        }
+
+        source.SetPropertyValue(nameof(TextChange.AddedLength), source.AddedLength + target.AddedLength);
+        source.SetPropertyValue(nameof(TextChange.RemovedLength), source.RemovedLength + target.RemovedLength);
+    }
+
+    static public void Merge(this TextChange[] sources, IEnumerable<TextChange> targets)
+    {
+        if (sources.Length != targets.Count())
+        {
+            throw new InvalidOperationException($"Try to merge {nameof(TextChange)} collection, but collection's count mismatch.");
+        }
+
+        for (int i = 0; i < sources.Length; ++i)
+        {
+            sources[i].Merge(targets.ElementAt(i));
+        }
     }
 }

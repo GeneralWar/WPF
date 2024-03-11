@@ -5,7 +5,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public ImageSource ToImageSource(this Icon icon)
     {

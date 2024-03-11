@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public UIElement? GetItem(this Grid instance, int rowIndex, int columnIndex)
     {

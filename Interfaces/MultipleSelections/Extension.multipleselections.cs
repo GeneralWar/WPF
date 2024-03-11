@@ -13,8 +13,8 @@ namespace General.WPF
 
         public static bool IsOnlySelected(this IMultipleSelectionsItem item)
         {
-            IEnumerable<IMultipleSelectionsItem> selections = item.Collection.SelectedItems;
-            return 1 == selections.Count() && item == selections.First();
+            IEnumerable<IMultipleSelectionsItem>? selections = item.Collection?.SelectedItems;
+            return selections is not null && 1 == selections.Count() && item == selections.First();
         }
     }
 }

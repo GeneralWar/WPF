@@ -3,6 +3,7 @@
                     xmlns:local="clr-namespace:General.WPF">
     <!--value to Boolean-->
     <local:EqualityConverter x:Key="EqualityConverter"/>
+    <local:ObjectEqualToConverter x:Key="ObjectEqualToConverter"/>
     <local:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
     <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
     <!--value to Visibility-->
@@ -43,4 +44,6 @@
     <local:UriUnescapeConverter x:Key="UriUnescapeConverter"/>
     <!--selection to enable-->
     <local:IListSelectionToEnableConverter x:Key="IListSelectionToEnableConverter"/>
+    <!--unit converters-->
+    <local:CentimeterToPixelConverter x:Key="CentimeterToPixelConverter"/>
 </ResourceDictionary>

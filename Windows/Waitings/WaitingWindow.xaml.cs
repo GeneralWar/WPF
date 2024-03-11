@@ -48,7 +48,7 @@ namespace General.WPF
                 }
                 catch (Exception e)
                 {
-                    this.ShowErrorMessageBox(e.Message);
+                    this.ShowErrorMessageBox(e);
                 }
                 this.Dispatcher.Invoke(this.Close);
                 return;

@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     private const string DRAG_SOURCE = "DragSource";
 

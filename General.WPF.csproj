@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Platforms>AnyCPU;x64</Platforms>
     <Nullable>enable</Nullable>
@@ -38,26 +38,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Controls\Inputs\HeaderedIntegerInputBox.xaml.cs">
+    <Compile Update="Visuals\Controls\Inputs\HeaderedIntegerInputBox.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Controls\Inputs\PercentInputBox.xaml.cs">
+    <Compile Update="Visuals\Controls\Inputs\PercentInputBox.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Views\Renders\RenderView.xaml.cs">
+    <Compile Update="Visuals\Views\Renders\RenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Views\Tabs\TabItem.cs">
+    <Compile Update="Visuals\Views\Tabs\TabItem.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Controls\Inputs\PercentInputBox.xaml">
+    <Page Update="Visuals\Controls\Inputs\PercentInputBox.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Views\Renders\RenderView.xaml">
+    <Page Update="Visuals\Views\Renders\RenderView.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>

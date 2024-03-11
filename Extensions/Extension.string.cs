@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public string EscapeToWindowsPresentationFoundationHeader(this string value)
     {

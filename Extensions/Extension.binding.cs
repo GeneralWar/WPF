@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public void RemoveBindings(this FrameworkElement instance, bool recursively = false)
     {

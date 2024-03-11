@@ -2,14 +2,22 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public void RemoveChild(this DependencyObject parent, UIElement child)
     {
         Panel? panel = parent as Panel;
         if (panel is not null)
         {
+            TabPanel? tab = panel as TabPanel;
+            if (tab is not null)
+            {
+                (tab.TemplatedParent as TabControl)?.Items.Remove(child);
+                return;
+            }
+
             panel.Children.Remove(child);
             return;
         }

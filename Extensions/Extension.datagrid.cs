@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Windows.Controls;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static public void ApplySorting(this DataGrid instance)
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     public static bool IsControlDown(this EventArgs _)
     {

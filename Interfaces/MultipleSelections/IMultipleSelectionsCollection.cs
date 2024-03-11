@@ -24,7 +24,7 @@ namespace General.WPF
     {
         DependencyObject Parent { get; }
 
-        IMultipleSelectionsCollection Collection { get; }
+        IMultipleSelectionsCollection? Collection { get; }
         bool IsSelected { get; set; }
         int SiblingIndex { get; }
     }

@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Windows.Media.Imaging;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     /// <summary>
     /// Get builtin image from assembly

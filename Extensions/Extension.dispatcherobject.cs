@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     static private void record_items_enable_status(DispatcherObject instance, Dictionary<object, bool> map, IEnumerable<UIElement> disabledItems)
     {

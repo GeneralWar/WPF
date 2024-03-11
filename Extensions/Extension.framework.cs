@@ -1,10 +1,13 @@
-﻿using System;
+﻿using General;
+using System;
 using System.Collections;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
-static public partial class Extension
+static public partial class WPFExtension
 {
     public static Window? GetTopWindow(this FrameworkElement element)
     {
@@ -19,7 +22,23 @@ static public partial class Extension
 
     private static FrameworkElement? GetRealParent(this FrameworkElement element)
     {
-        return element.Parent as FrameworkElement ?? element.TemplatedParent as FrameworkElement;
+        if (element.Parent is not null)
+        {
+            return element.Parent as FrameworkElement;
+        }
+
+        object? parent = element.GetPropertyValue("VisualParent");
+        if (parent is not null)
+        {
+            return parent as FrameworkElement;
+        }
+
+        if (element.TemplatedParent is not null)
+        {
+            return element.TemplatedParent as FrameworkElement;
+        }
+
+        return null;
     }
 
     public static bool IsChildOf(this FrameworkElement element, FrameworkElement testParent, bool includeSelf = false)
@@ -87,7 +106,7 @@ static public partial class Extension
 
     static public void RemoveFromParent(this FrameworkElement element)
     {
-        element?.Parent?.RemoveChild(element);
+        element.GetRealParent()?.RemoveChild(element);
     }
 
     /// <summary>
@@ -196,4 +215,60 @@ static public partial class Extension
 
         throw new NotImplementedException();
     }
+    static public void ShowMessageBox(this FrameworkElement instance, string message, [CallerFilePath] string? filename = null, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string? memberName = null)
+    {
+        Tracer.Log(message, filename, lineNumber, memberName);
+        instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), message));
+    }
+
+    static public void ShowWarningMessageBox(this FrameworkElement instance, string message, [CallerFilePath] string? filename = null, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string? memberName = null)
+    {
+        Tracer.Warn(message, filename, lineNumber, memberName);
+        instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), message, "警告", MessageBoxButton.OK, MessageBoxImage.Warning));
+    }
+
+    static public void ShowErrorMessageBox(this FrameworkElement instance, string message, [CallerFilePath] string? filename = null, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string? memberName = null)
+    {
+        Tracer.Error(message, filename, lineNumber, memberName);
+        instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), message, "错误", MessageBoxButton.OK, MessageBoxImage.Error));
+    }
+
+    static public void ShowErrorMessageBox(this FrameworkElement instance, Exception e, [CallerFilePath] string? filename = null, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string? memberName = null)
+    {
+        Tracer.Error(e, filename, lineNumber, memberName);
+        instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error));
+
+        if (e.InnerException is not null)
+        {
+            ShowErrorMessageBox(instance, e.InnerException, filename, lineNumber, memberName);
+        }
+    }
+
+    static public void ExecuteSafely(this FrameworkElement instance, Action action)
+    {
+        try
+        {
+            action.Invoke();
+        }
+        catch (Exception e)
+        {
+            instance.ShowErrorMessageBox(e);
+        }
+    }
+
+    static public async void ExecuteSafely(this FrameworkElement instance, Func<Task> action)
+    {
+        try
+        {
+            await action.Invoke();
+        }
+        catch (Exception e)
+        {
+            instance.ShowErrorMessageBox(e);
+        }
+    }
+
+    static public void ShowWindow<WindowType>(this FrameworkElement instance, Func<WindowType> creator) where WindowType : Window => instance.GetTopWindow()?.ShowWindow<WindowType>(creator);
+
+    static public bool? ShowDialogWindow<WindowType>(this FrameworkElement instance, Func<WindowType> creator) where WindowType : Window => instance.GetTopWindow()?.ShowDialogWindow<WindowType>(creator);
 }

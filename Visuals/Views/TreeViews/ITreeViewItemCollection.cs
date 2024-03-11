@@ -7,6 +7,7 @@ namespace General.WPF
         ITreeViewItemCollection? Parent { get; }
         int SiblingIndex { get; }
 
+        bool AllowItemsDrag { get; }
         ItemCollection Items { get; }
 
         object Tag { get; }
