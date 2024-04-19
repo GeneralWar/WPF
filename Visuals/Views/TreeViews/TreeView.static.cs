@@ -46,10 +46,6 @@ namespace General.WPF
         static private readonly PropertyInfo? IsSelectionChangeActiveProperty = typeof(TreeView).GetProperty("IsSelectionChangeActive", BindingFlags.NonPublic | BindingFlags.Instance);
         static private readonly DependencyPropertyKey SelectedItemPropertyKey;
 
-        static public DependencyProperty AllowItemsDragProperty = DependencyProperty.Register(nameof(AllowItemsDrag), typeof(bool), typeof(TreeView), new PropertyMetadata(true));
-        static public DependencyProperty ItemDragModeProperty = DependencyProperty.Register(nameof(ItemDragMode), typeof(DragModes), typeof(TreeView), new PropertyMetadata(DragModes.All));
-        static public DependencyProperty InsertEffectRangeProperty = DependencyProperty.Register(nameof(InsertEffectRange), typeof(double), typeof(TreeView), new PropertyMetadata(DRAG_EFFECT_RATE));
-
         static TreeView()
         {
             DependencyPropertyKey? key = typeof(System.Windows.Controls.TreeView).GetField("SelectedItemPropertyKey", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) as DependencyPropertyKey;

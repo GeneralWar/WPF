@@ -31,7 +31,7 @@ namespace General.WPF
             InitializeComponent();
         }
 
-        void IMultipleSelectionsCollection.Select(IMultipleSelectionsItem item)
+        bool IMultipleSelectionsCollection.Select(IMultipleSelectionsItem item)
         {
             foreach (IMultipleSelectionsItem record in mSelectedItems)
             {
@@ -45,6 +45,7 @@ namespace General.WPF
 
             mSelectedItems.Clear();
             (this as IMultipleSelectionsCollection).Append(item);
+            return true;
         }
 
         void IMultipleSelectionsCollection.Append(IMultipleSelectionsItem item)

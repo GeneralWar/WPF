@@ -8,11 +8,29 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 
 namespace General.WPF
 {
+    internal class TreeViewLineConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType,
+        object parameter, System.Globalization.CultureInfo culture)
+        {
+            TreeViewItem item = (TreeViewItem)value;
+            ItemsControl ic = ItemsControl.ItemsControlFromItemContainer(item);
+            return ic.ItemContainerGenerator.IndexFromContainer(item) == ic.Items.Count - 1;
+        }
+
+        public object ConvertBack(object value, Type targetType,
+        object parameter, System.Globalization.CultureInfo culture)
+        {
+            return false;
+        }
+    }
+
     /// <summary>
     /// TreeView.xaml 的交互逻辑
     /// </summary>
@@ -32,12 +50,23 @@ namespace General.WPF
 
         private IMultipleSelectionsItem? mLastOperatedItem = null;
 
+        static public DependencyProperty AllowItemsDragProperty = DependencyProperty.Register(nameof(AllowItemsDrag), typeof(bool), typeof(TreeView), new PropertyMetadata(true));
         public bool AllowItemsDrag { get { return (bool)GetValue(AllowItemsDragProperty); } set { SetValue(AllowItemsDragProperty, value); } }
+
+        static public DependencyProperty ItemDragModeProperty = DependencyProperty.Register(nameof(ItemDragMode), typeof(DragModes), typeof(TreeView), new PropertyMetadata(DragModes.All));
         public DragModes ItemDragMode { get { return (DragModes)GetValue(ItemDragModeProperty); } set { SetValue(ItemDragModeProperty, value); } }
+
+        static public DependencyProperty InsertEffectRangeProperty = DependencyProperty.Register(nameof(InsertEffectRange), typeof(double), typeof(TreeView), new PropertyMetadata(DRAG_EFFECT_RATE));
         /// <summary>
         /// The valid range to check insert
         /// </summary>
         public double InsertEffectRange { get { return (double)GetValue(InsertEffectRangeProperty); } set { SetValue(InsertEffectRangeProperty, value); } }
+
+        static public DependencyProperty ShowConnectingLinesAmongItemsProperty = DependencyProperty.Register(nameof(ShowConnectingLinesAmongItems), typeof(bool), typeof(TreeView), new PropertyMetadata(false));
+        public bool ShowConnectingLinesAmongItems { get { return (bool)GetValue(ShowConnectingLinesAmongItemsProperty); } set { SetValue(ShowConnectingLinesAmongItemsProperty, value); } }
+
+        static public DependencyProperty ConnectingLineColorProperty = DependencyProperty.Register(nameof(ConnectingLineColor), typeof(Brush), typeof(TreeView), new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0xdc, 0xdc, 0xdc))));
+        public Brush ConnectingLineColor { get { return (Brush)GetValue(ConnectingLineColorProperty); } set { SetValue(ConnectingLineColorProperty, value); } }
 
         ITreeViewItemCollection? ITreeViewItemCollection.Parent => this.Parent as ITreeViewItemCollection;
 
@@ -76,9 +105,25 @@ namespace General.WPF
             mDragEffectMask = this.Template.FindName("DragEffectMask", this) as Border;
         }
 
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+
+            if (ShowConnectingLinesAmongItemsProperty == e.Property)
+            {
+                bool value = (bool)e.NewValue;
+                this.Items.OfType<TreeViewItem>().ForEach(item => item.ShowConnectingLinesAmongItems = value);
+            }
+            else if (ConnectingLineColorProperty == e.Property)
+            {
+                Brush value = (Brush)e.NewValue;
+                this.Items.OfType<TreeViewItem>().ForEach(item => item.ConnectingLineColor = value);
+            }
+        }
+
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
         {
-            //base.OnItemsChanged(e);
+            base.OnItemsChanged(e);
             this.onItemsChange(this, e);
         }
 
@@ -86,13 +131,8 @@ namespace General.WPF
         {
             base.OnItemsChanged(e);
 
-            if (NotifyCollectionChangedAction.Remove == e.Action)
+            if (e.OldItems is not null)
             {
-                if (null == e.OldItems)
-                {
-                    return;
-                }
-
                 int selectedCount = mSelectedItems.Count;
                 foreach (object i in e.OldItems)
                 {
@@ -103,13 +143,8 @@ namespace General.WPF
                     this.reportSelectedItemsChange();
                 }
             }
-            else if (NotifyCollectionChangedAction.Add == e.Action)
+            if (e.NewItems is not null)
             {
-                if (null == e.NewItems)
-                {
-                    return;
-                }
-
                 int selectedCount = mSelectedItems.Count;
                 foreach (object i in e.NewItems)
                 {
@@ -354,7 +389,7 @@ namespace General.WPF
             TreeViewItem? treeItem = item as TreeViewItem;
             if (treeItem is not null)
             {
-                treeItem.onItemsChange -= this.onItemsChange;
+                treeItem.OnItemsChange -= this.onItemsChange;
                 if (treeItem == mLastOperatedItem)
                 {
                     mLastOperatedItem = null;
@@ -378,7 +413,12 @@ namespace General.WPF
             TreeViewItem? treeItem = item as TreeViewItem;
             if (treeItem is not null)
             {
-                treeItem.onItemsChange += this.onItemsChange;
+                treeItem.OnItemsChange += this.onItemsChange;
+                if (this.Items.Contains(treeItem))
+                {
+                    treeItem.ConnectingLineColor = this.ConnectingLineColor;
+                    treeItem.ShowConnectingLinesAmongItems = this.ShowConnectingLinesAmongItems;
+                }
             }
 
             IMultipleSelectionsItem? selectable = item as IMultipleSelectionsItem;
@@ -532,16 +572,16 @@ namespace General.WPF
             Trace.Assert(1 != mSelectedItems.Count || this.SelectedItem == mSelectedItems.First());
         }
 
-        void IMultipleSelectionsCollection.Select(IMultipleSelectionsItem item)
+        bool IMultipleSelectionsCollection.Select(IMultipleSelectionsItem item)
         {
             if (mIsAppending)
             {
-                return;
+                return false;
             }
 
             if (1 == mSelectedItems.Count && mSelectedItems.First() == item)
             {
-                return;
+                return true;
             }
 
             foreach (IMultipleSelectionsItem record in mSelectedItems)
@@ -553,11 +593,12 @@ namespace General.WPF
 
                 record.IsSelected = false;
             }
-
             mSelectedItems.Clear();
+
             (this as IMultipleSelectionsCollection).Append(item);
             this.setAsBaseSelected(item);
             this.reportSelectedItemsChange();
+            return true;
         }
 
         void IMultipleSelectionsCollection.SelectTo(IMultipleSelectionsItem item)

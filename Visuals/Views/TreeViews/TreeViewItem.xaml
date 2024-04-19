@@ -6,8 +6,10 @@
               xmlns:local="clr-namespace:General.WPF"
               mc:Ignorable="d" 
               d:DesignHeight="450" d:DesignWidth="800"
-              Style="{DynamicResource TreeViewItemStyle}" LostFocus="onLostFocus">
+              Style="{DynamicResource TreeViewItemTriangleStyle}" LostFocus="onLostFocus">
+              <!--Style="{DynamicResource TreeViewItemAddMinusStyle}" LostFocus="onLostFocus">-->
     <TreeViewItem.Resources>
+        <local:TreeViewLineConverter x:Key="LineConverter"/>
         <SolidColorBrush x:Key="TreeViewItem.TreeArrow.Static.Stroke" Color="#FF818181"/>
         <SolidColorBrush x:Key="TreeViewItem.TreeArrow.Static.Fill" Color="#FFFFFFFF"/>
         <SolidColorBrush x:Key="TreeViewItem.TreeArrow.MouseOver.Stroke" Color="#FF27C7F7"/>
@@ -18,7 +20,37 @@
         <SolidColorBrush x:Key="TreeViewItem.TreeArrow.MouseOver.Checked.Fill" Color="#FF82DFFB"/>
         <SolidColorBrush x:Key="TreeViewItem.Backgroud.MouseOver" Color="#FFEEEEEE"/>
         <PathGeometry x:Key="TreeArrow" Figures="M0,0 L0,6 L6,0 z"/>
-        <Style x:Key="ExpandCollapseToggleStyle" TargetType="{x:Type ToggleButton}">
+        <Style x:Key="ExpandCollapseAddMinusToggleStyle" TargetType="{x:Type ToggleButton}">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                        <Grid Width="15" Height="13" SnapsToDevicePixels="True">
+                            <!-- Rectangle 9x9 pixels -->
+                            <Rectangle Width="9" Height="9" Stroke="#919191" SnapsToDevicePixels="true">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush EndPoint="0.5,2" StartPoint="0.5,0">
+                                        <GradientStop Color="White" Offset="0"/>
+                                        <GradientStop Color="Silver" Offset="0.5"/>
+                                        <GradientStop Color="LightGray" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <!-- Vertical line inside rectangle -->
+                            <Rectangle x:Name="ExpandPath" Width="1" Height="5" Stroke="Black" SnapsToDevicePixels="true"/>
+                            <!-- Horizontal line inside rectangle -->
+                            <Rectangle Width="5" Height="1" Stroke="Black" SnapsToDevicePixels="true"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Visibility" TargetName="ExpandPath" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ExpandCollapseTriangleToggleStyle" TargetType="{x:Type ToggleButton}">
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Width" Value="16"/>
             <Setter Property="Height" Value="16"/>
@@ -59,6 +91,51 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="TreeViewItemAddMinusStyle" TargetType="{x:Type TreeViewItem}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TreeViewItem}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition MinWidth="19" Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Connecting Lines -->
+                            <!-- Horizontal line -->
+                            <Rectangle x:Name="HorizontalLine" Margin="9,1,0,-1" Height="1" Stroke="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:TreeViewItem}}, Path=ConnectingLineColor, Mode=OneWay}" SnapsToDevicePixels="True"/>
+                            <!-- Vertical line -->
+                            <Rectangle x:Name="VerticalLine" Width="1" Stroke="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:TreeViewItem}}, Path=ConnectingLineColor, Mode=OneWay}" Margin="0,0,1,0" Grid.RowSpan="2" SnapsToDevicePixels="true" Fill="White"/>
+                            <!-- Insert Toggle Button -->
+                            <ToggleButton Margin="-1,0,0,0" x:Name="Expander" Style="{StaticResource ExpandCollapseAddMinusToggleStyle}" IsChecked="{Binding Path=IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press"/>
+                            <Border Name="Bd" Grid.Column="1" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                                <ContentPresenter x:Name="PART_Header" ContentSource="Header" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" MinWidth="20"/>
+                            </Border>
+                            <ItemsPresenter x:Name="ItemsHost" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"/>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <!-- This trigger changes the connecting lines if the item is the last in the list -->
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Converter={StaticResource LineConverter}}" Value="true">
+                                <Setter TargetName="VerticalLine" Property="Height" Value="9"/>
+                                <Setter TargetName="VerticalLine" Property="VerticalAlignment" Value="Top"/>
+                            </DataTrigger>
+                            <Trigger Property="IsExpanded" Value="false">
+                                <Setter Property="Visibility" TargetName="ItemsHost" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter Property="Visibility" TargetName="Expander" Value="Hidden"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="TreeViewItemFocusVisual">
             <Setter Property="Control.Template">
                 <Setter.Value>
@@ -68,7 +145,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="TreeViewItemStyle" TargetType="{x:Type TreeViewItem}">
+        <Style x:Key="TreeViewItemTriangleStyle" TargetType="{x:Type TreeViewItem}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -87,7 +164,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <ToggleButton x:Name="Expander" ClickMode="Press" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource ExpandCollapseToggleStyle}"/>
+                            <ToggleButton x:Name="Expander" ClickMode="Press" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource ExpandCollapseAddMinusToggleStyle}"/>
                             <Label x:Name="PART_Header" Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" BorderBrush="{TemplateBinding BorderBrush}" Grid.Column="1" Content="{TemplateBinding Header}" Padding="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                             <Border Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" Grid.Column="1" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="true" Margin="0,0,6,0" Visibility="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=InputVisible, Converter={StaticResource BooleanToVisibilityHiddenConverter}, Mode=OneWay}">
                                 <TextBox HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Left" Text="{Binding RelativeSource={RelativeSource Mode=TemplatedParent}, Path=InputText, Mode=TwoWay}" KeyDown="onInputBoxKeyDown" IsVisibleChanged="onInputVisibleChanged" LostFocus="onInputLostFocus" Tag="{Binding RelativeSource={RelativeSource AncestorType={x:Type TreeViewItem}}}"/>

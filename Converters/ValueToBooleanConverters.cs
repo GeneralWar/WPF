@@ -1,4 +1,5 @@
 ﻿using System;
+using System.DirectoryServices.ActiveDirectory;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
@@ -26,11 +27,33 @@ namespace General.WPF
             throw new NotImplementedException();
         }
     }
+
     public class ObjectEqualToConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value?.Equals(parameter) ?? (value is null && parameter is null);
+            if (value is null || parameter is null)
+            {
+                return value is null && parameter is null;
+            }
+            return value.Equals(parameter);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class InverseObjectEqualToConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is null || parameter is null)
+            {
+                return false;
+            }
+            return !value.Equals(parameter);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

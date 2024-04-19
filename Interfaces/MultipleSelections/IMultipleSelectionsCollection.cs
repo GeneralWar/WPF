@@ -7,7 +7,7 @@ namespace General.WPF
     {
         IMultipleSelectionsItem? LastSelected { get; }
 
-        void Select(IMultipleSelectionsItem item);
+        bool Select(IMultipleSelectionsItem item);
         void SelectTo(IMultipleSelectionsItem item);
 
         void Append(IMultipleSelectionsItem item);

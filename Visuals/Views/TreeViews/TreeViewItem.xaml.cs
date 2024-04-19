@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,6 +27,12 @@ namespace General.WPF
         static public DependencyProperty AllowItemsDragProperty = DependencyProperty.Register(nameof(AllowItemsDrag), typeof(bool), typeof(TreeViewItem), new PropertyMetadata(true));
         public bool AllowItemsDrag { get { return (bool)GetValue(AllowItemsDragProperty); } set { SetValue(AllowItemsDragProperty, value); } }
 
+        static public DependencyProperty ShowConnectingLinesAmongItemsProperty = DependencyProperty.Register(nameof(ShowConnectingLinesAmongItems), typeof(bool), typeof(TreeViewItem), new PropertyMetadata(false));
+        public bool ShowConnectingLinesAmongItems { get { return (bool)GetValue(ShowConnectingLinesAmongItemsProperty); } set { SetValue(ShowConnectingLinesAmongItemsProperty, value); } }
+
+        static public DependencyProperty ConnectingLineColorProperty = DependencyProperty.Register(nameof(ConnectingLineColor), typeof(Brush), typeof(TreeViewItem), new PropertyMetadata(new SolidColorBrush(Color.FromRgb(0xdc, 0xdc, 0xdc))));
+        public Brush ConnectingLineColor { get { return (Brush)GetValue(ConnectingLineColorProperty); } set { SetValue(ConnectingLineColorProperty, value); } }
+
         private class EditToken
         {
             private bool mIsCanceled = false;
@@ -40,8 +47,8 @@ namespace General.WPF
         public delegate bool OnItemHeaderChange(TreeViewItem item, string oldName, string newName);
         public event OnItemHeaderChange? OnItemHeaderChanging = null;
 
-        public delegate void OnItemsChange(object sender, NotifyCollectionChangedEventArgs e);
-        public event OnItemsChange? onItemsChange = null;
+        internal delegate void OnItemsChangeDelegate(object sender, NotifyCollectionChangedEventArgs e);
+        internal event OnItemsChangeDelegate? OnItemsChange = null;
 
         private bool mIsEditing = false;
         private bool mCanEdit = false;
@@ -400,7 +407,16 @@ namespace General.WPF
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
         {
             base.OnItemsChanged(e);
-            this.onItemsChange?.Invoke(this, e);
+            this.OnItemsChange?.Invoke(this, e);
+
+            if (e.NewItems is not null)
+            {
+                foreach (TreeViewItem item in e.NewItems.OfType<TreeViewItem>())
+                {
+                    item.ConnectingLineColor = this.ConnectingLineColor;
+                    item.ShowConnectingLinesAmongItems = this.ShowConnectingLinesAmongItems;
+                }
+            }
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
@@ -411,13 +427,27 @@ namespace General.WPF
             {
                 if ((bool)e.NewValue)
                 {
-                    this.Select(false);
+                    if (!this.Select(false))
+                    {
+                        return;
+                    }
                 }
                 else
                 {
                     this.Collection?.Unselect(this);
                     mCanEdit = false;
                 }
+            }
+            else if (ShowConnectingLinesAmongItemsProperty == e.Property)
+            {
+                bool value = (bool)e.NewValue;
+                this.Style = this.FindResource(value ? "TreeViewItemAddMinusStyle" : "TreeViewItemTriangleStyle") as Style;
+                this.Items.OfType<TreeViewItem>().ForEach(item => item.ShowConnectingLinesAmongItems = value);
+            }
+            else if (ConnectingLineColorProperty == e.Property)
+            {
+                Brush value = (Brush)e.NewValue;
+                this.Items.OfType<TreeViewItem>().ForEach(item => item.ConnectingLineColor = value);
             }
 
             if (e.Property == IsSelectedProperty || e.Property == IsSelectionActiveProperty || e.Property == IsMouseOverProperty || e.Property == IsEnabledProperty)
@@ -430,15 +460,16 @@ namespace General.WPF
         /// Select the item
         /// </summary>
         /// <param name="append">Determine if clear previous selections (Only selection or multiple selections)</param>
-        public void Select(bool append)
+        public bool Select(bool append)
         {
             if (append)
             {
                 this.Collection?.Append(this);
+                return true;
             }
             else
             {
-                this.Collection?.Select(this);
+                return this.Collection?.Select(this) ?? false;
             }
         }
 
