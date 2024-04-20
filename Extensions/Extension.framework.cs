@@ -11,12 +11,10 @@ static public partial class WPFExtension
 {
     public static Window? GetTopWindow(this FrameworkElement element)
     {
-        //FrameworkElement? item = element;
-        //while (null != item && item is not Window)
-        //{
-        //    item = item.GetRealParent() as FrameworkElement;
-        //}
-        //return item as Window;
+        if (element is Window window)
+        {
+            return window;
+        }
         return Window.GetWindow(element);
     }
 

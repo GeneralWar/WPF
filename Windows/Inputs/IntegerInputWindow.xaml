@@ -1,0 +1,34 @@
+﻿<Window x:Class="General.WPF.IntegerInputWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:General.WPF"
+        mc:Ignorable="d"
+        Title="整数输入" Height="128" Width="256">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Label HorizontalAlignment="Center" Content="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:IntegerInputWindow}}, Path=Tip, Mode=OneWay}"/>
+
+        <Grid Grid.Row="1" Width="108">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="&lt;" Click="onLeftButtonClick" Visibility="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:IntegerInputWindow}}, Path=MinValue, Converter={StaticResource ObjectToVisibilityCollapsedConverter}}"/>
+
+            <TextBox Grid.Column="1" HorizontalContentAlignment="Center" InputScope="Number" PreviewTextInput="onTextInput" Text="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:IntegerInputWindow}}, Path=ValueString, Mode=TwoWay}"/>
+            
+            <Button Grid.Column="2" Content="&gt;" Click="onRightButtonClick" Visibility="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:IntegerInputWindow}}, Path=MaxValue, Converter={StaticResource ObjectToVisibilityCollapsedConverter}}"/>
+        </Grid>
+
+        <Button Grid.Row="2" Margin="3" Padding="3,1" HorizontalAlignment="Center" Click="onEnsureButton">确认</Button>
+    </Grid>
+</Window>

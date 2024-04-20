@@ -33,11 +33,18 @@ static public partial class WPFExtension
         window.Activate();
     }
 
-    static public bool? ShowDialogWindow<WindowType>(this Window instance, Func<WindowType> creator) where WindowType : Window
+    static public bool? ShowDialogWindow<WindowType>(this Window instance, Func<WindowType> creator, Action<WindowType>? onClose = null) where WindowType : Window
     {
         WindowType window = WindowPool.GetOrRegister(creator);
         window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
         window.Owner = instance;
+        if (onClose is not null)
+        {
+            window.Closed += delegate
+            {
+                onClose.Invoke(window);
+            };
+        }
         return window.ShowDialog();
     }
 }
