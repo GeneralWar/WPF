@@ -1,5 +1,4 @@
 ﻿using System;
-using System.DirectoryServices.ActiveDirectory;
 using System.Globalization;
 using System.Linq;
 using System.Windows.Data;
@@ -41,6 +40,16 @@ namespace General.WPF
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            if ((bool)value)
+            {
+                if (targetType.IsEnum)
+                {
+                    return Enum.ToObject(targetType, parameter);
+                }
+
+                throw new NotImplementedException();
+            }
+
             throw new NotImplementedException();
         }
     }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:General.WPF"
         mc:Ignorable="d"
-        Title="WaitingWindow" Height="64" Width="192" ResizeMode="NoResize" WindowStyle="None" WindowStartupLocation="CenterOwner" BorderThickness="1" Background="{x:Static SystemColors.ControlBrush}">
+        Title="等待" Height="64" Width="192" ResizeMode="NoResize" WindowStyle="None" WindowStartupLocation="CenterOwner" BorderThickness="1" Background="{x:Static SystemColors.ControlBrush}">
     <Grid VerticalAlignment="Center" Margin="{Binding ElementName=Window, Path=ProgressMargin}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

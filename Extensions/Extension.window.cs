@@ -33,7 +33,7 @@ static public partial class WPFExtension
         window.Activate();
     }
 
-    static public bool? ShowDialogWindow<WindowType>(this Window instance, Func<WindowType> creator, Action<WindowType>? onClose = null) where WindowType : Window
+    static public WindowType ShowDialogWindow<WindowType>(this Window instance, Func<WindowType> creator, Action<WindowType>? onClose = null) where WindowType : Window
     {
         WindowType window = WindowPool.GetOrRegister(creator);
         window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -45,6 +45,7 @@ static public partial class WPFExtension
                 onClose.Invoke(window);
             };
         }
-        return window.ShowDialog();
+        window.ShowDialog();
+        return window;
     }
 }

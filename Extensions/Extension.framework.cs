@@ -268,5 +268,5 @@ static public partial class WPFExtension
 
     static public void ShowWindow<WindowType>(this FrameworkElement instance, Func<WindowType> creator) where WindowType : Window => instance.GetTopWindow()?.ShowWindow<WindowType>(creator);
 
-    static public bool? ShowDialogWindow<WindowType>(this FrameworkElement instance, Func<WindowType> creator) where WindowType : Window => instance.GetTopWindow()?.ShowDialogWindow<WindowType>(creator);
+    static public WindowType ShowDialogWindow<WindowType>(this FrameworkElement instance, Func<WindowType> creator) where WindowType : Window => instance.GetTopWindow()?.ShowDialogWindow<WindowType>(creator) ?? throw new InvalidOperationException("No top window");
 }
