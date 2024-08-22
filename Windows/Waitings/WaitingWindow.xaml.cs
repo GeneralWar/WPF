@@ -1,16 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace General.WPF
 {
@@ -25,7 +15,7 @@ namespace General.WPF
 
         public double ProgressHeight { get => (double)this.GetValue(ProgressHeightProperty); set => this.SetValue(ProgressHeightProperty, value); }
         public Thickness ProgressMargin { get => (Thickness)this.GetValue(ProgressMarginProperty); set => this.SetValue(ProgressMarginProperty, value); }
-        public string ProgressText{ get => (string)this.GetValue(ProgressTextProperty); set => this.SetValue(ProgressTextProperty, value); }
+        public string ProgressText { get => (string)this.GetValue(ProgressTextProperty); set => this.SetValue(ProgressTextProperty, value); }
 
         private Func<Task>? mAction = null;
 
@@ -50,7 +40,7 @@ namespace General.WPF
                 {
                     this.ShowErrorMessageBox(e);
                 }
-                this.Dispatcher.Invoke(this.Close);
+                await this.Dispatcher.InvokeAsync(this.Close);
                 return;
             }
         }

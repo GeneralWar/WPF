@@ -15,7 +15,7 @@ namespace General.WPF
         private string? mRelativePath = null;
         public override string CachePath => string.IsNullOrWhiteSpace(mRelativePath) ? Path.Join(base.CachePath, this.Window.GetType().Name + ".json") : Path.Join(base.CachePath, mRelativePath, this.Window.GetType().Name + ".json");
 
-        public Window Window { get; private set; }
+        [NonDataField] public Window Window { get; private set; }
 
         [DataField] public int LocationX { get; private set; }
         [DataField] public int LocationY { get; private set; }
@@ -29,22 +29,25 @@ namespace General.WPF
             mRelativePath = relativePath;
 
             this.Window = window;
-            window.Initialized += this.onInitialized;
-            window.Activated += this.onShow;
             window.Closing += this.onClosing;
-
-            this.restore();
+            if (this.restore())
+            {
+                window.Initialized += this.onInitialized;
+                window.Activated += this.onShow;
+            }
         }
 
-        private void restore()
+        private bool restore()
         {
             byte[]? data = this.readFromCache();
             if (data is null)
             {
-                return;
+                return false;
             }
 
-            Json.Parse(Encoding.UTF8.GetString(data))?.Deserialize(this);
+            string content = Encoding.UTF8.GetString(data);
+            Json.Parse(content)?.Deserialize(this);
+            return true;
         }
 
         private void onInitialized(object? sender, EventArgs e)

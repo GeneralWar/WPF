@@ -23,7 +23,10 @@ namespace General.WPF
                     throw new InvalidOperationException($"{nameof(WindowPool)}: type {type} already exists");
                 }
 
-                window.Closing += delegate { sWindows.Remove(window.GetType()); };
+                window.Closed += delegate
+                {
+                    sWindows.Remove(window.GetType());
+                };
             });
         }
 

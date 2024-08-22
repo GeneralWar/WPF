@@ -172,7 +172,7 @@ namespace General.WPF
                     if (!token.IsCanceled)
                     {
                         Tracer.Log($"{nameof(TreeViewItem)}: try to edit {header}");
-                        this.Dispatcher.Invoke(this.Edit);
+                        this.Dispatcher.InvokeAsync(this.Edit);
                     }
                 }, mEditCancelToken);
                 mCanEdit = false;

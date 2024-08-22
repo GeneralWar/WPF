@@ -30,6 +30,11 @@ static public partial class WPFExtension
         window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
         window.Owner = instance;
         window.Show();
+
+        if (WindowState.Minimized == window.WindowState)
+        {
+            window.WindowState = WindowState.Normal;
+        }
         window.Activate();
     }
 

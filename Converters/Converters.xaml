@@ -23,6 +23,12 @@
     <local:InverseBooleanToVisibilityCollapsedConverter x:Key="InverseBooleanToVisibilityCollapsedConverter"/>
     <local:BooleanToVisibilityHiddenConverter x:Key="BooleanToVisibilityHiddenConverter"/>
     <local:InverseBooleanToVisibilityHiddenConverter x:Key="InverseBooleanToVisibilityHiddenConverter"/>
+    <!--string to Visibility-->
+    <local:StringToVisibilityCollapsedConverter x:Key="StringToVisibilityCollapsedConverter"/>
+    <local:InverseStringToVisibilityCollapsedConverter x:Key="InverseStringToVisibilityCollapsedConverter"/>
+    <local:StringToVisibilityHiddenConverter x:Key="StringToVisibilityHiddenConverter"/>
+    <local:InverseStringToVisibilityHiddenConverter x:Key="InverseStringToVisibilityHiddenConverter"/>
+    <!--integer to Visibility-->
     <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
     <!--number to Thickness-->
     <local:NumberToLeftThicknessConverter x:Key="NumberToLeftThicknessConverter"/>

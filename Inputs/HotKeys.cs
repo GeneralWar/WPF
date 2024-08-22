@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Input;
 
 namespace General.WPF
@@ -21,6 +22,12 @@ namespace General.WPF
             {
                 sKeyMap.Add(realKey, actions = new List<Action>());
             }
+
+            if (actions.Contains(action))
+            {
+                return;
+            }
+
             actions.Add(action);
         }
 
@@ -40,10 +47,20 @@ namespace General.WPF
             }
         }
 
+        static public void Simulate(Key key, ModifierKeys modifiers)
+        {
+            HotKeys.update(MakeKey(key, modifiers));
+        }
+
         static public void Update(KeyEventArgs e)
         {
-            List<Action>? actions;
             ulong key = MakeKey(e.Key, Keyboard.Modifiers);
+            HotKeys.update(key);
+        }
+
+        static private void update(ulong key)
+        {
+            List<Action>? actions;
             if (!sKeyMap.TryGetValue(key, out actions))
             {
                 return;
@@ -53,6 +70,12 @@ namespace General.WPF
             {
                 action?.Invoke();
             }
+        }
+
+        static public void RegisterCloseWindow(Window window, Key key)
+        {
+            HotKeyRegistration registration = new HotKeyRegistration(key, window.Close);
+            registration.BindWindow(window);
         }
     }
 }

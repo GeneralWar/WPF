@@ -9,6 +9,16 @@ using System.Windows.Controls;
 
 static public partial class WPFExtension
 {
+    static public double CheckValidWidth(this FrameworkElement element)
+    {
+        return element.ActualWidth - element.Margin.Left - element.Margin.Right;
+    }
+
+    static public double CheckValidHeight(this FrameworkElement element)
+    {
+        return element.ActualHeight - element.Margin.Top - element.Margin.Bottom;
+    }
+
     public static Window? GetTopWindow(this FrameworkElement element)
     {
         if (element is Window window)
@@ -242,7 +252,13 @@ static public partial class WPFExtension
         }
     }
 
-    static public void ExecuteSafely(this FrameworkElement instance, Action action)
+    static public MessageBoxResult ShowQuestionMessageBox(this FrameworkElement instance, string message, MessageBoxButton button = MessageBoxButton.YesNo, [CallerFilePath] string? filename = null, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string? memberName = null)
+    {
+        Tracer.Log(message, filename, lineNumber, memberName);
+        return instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), message, "询问", button, MessageBoxImage.Question));
+    }
+
+    static public void ExecuteSafely(this FrameworkElement instance, Action action, Action<Exception>? onException = null)
     {
         try
         {
@@ -251,10 +267,11 @@ static public partial class WPFExtension
         catch (Exception e)
         {
             instance.ShowErrorMessageBox(e);
+            onException?.Invoke(e);
         }
     }
 
-    static public async void ExecuteSafely(this FrameworkElement instance, Func<Task> action)
+    static public async void ExecuteSafely(this FrameworkElement instance, Func<Task> action, Action<Exception>? onException = null)
     {
         try
         {
@@ -263,6 +280,7 @@ static public partial class WPFExtension
         catch (Exception e)
         {
             instance.ShowErrorMessageBox(e);
+            onException?.Invoke(e);
         }
     }
 

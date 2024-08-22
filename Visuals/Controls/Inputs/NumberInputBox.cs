@@ -114,7 +114,7 @@ namespace General.WPF
         private void updateText(string text, bool trim)
         {
             mTextUpdating = true;
-            this.Dispatcher.Invoke(() => this.Text = trim ? this.shortenText(text) : text);
+            this.Dispatcher.InvokeAsync(() => this.Text = trim ? this.shortenText(text) : text);
             mTextUpdating = false;
         }
 

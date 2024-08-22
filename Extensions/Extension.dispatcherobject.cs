@@ -9,7 +9,7 @@ static public partial class WPFExtension
 {
     static private void record_items_enable_status(DispatcherObject instance, Dictionary<object, bool> map, IEnumerable<UIElement> disabledItems)
     {
-        instance.Dispatcher.Invoke(() =>
+        instance.Dispatcher.InvokeAsync(() =>
         {
             foreach (UIElement i in disabledItems)
             {
@@ -21,7 +21,7 @@ static public partial class WPFExtension
 
     static private void restore_items_enable_status(DispatcherObject instance, Dictionary<object, bool> map, IEnumerable<UIElement> disabledItems)
     {
-        instance.Dispatcher.Invoke(() =>
+        instance.Dispatcher.InvokeAsync(() =>
         {
             foreach (UIElement i in disabledItems)
             {

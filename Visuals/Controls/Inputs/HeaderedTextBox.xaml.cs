@@ -8,8 +8,8 @@ namespace General.WPF
     /// </summary>
     public partial class HeaderedTextBox : TextBox
     {
-        static private readonly DependencyProperty HeaderWidthProperty = DependencyProperty.Register(nameof(HeaderWidth), typeof(GridLength), typeof(HeaderedTextBox));
-        public GridLength HeaderWidth { get => (GridLength)this.GetValue(HeaderWidthProperty); set => this.SetValue(HeaderWidthProperty, value); }
+        static private readonly DependencyProperty HeaderWidthProperty = DependencyProperty.Register(nameof(HeaderWidth), typeof(double), typeof(HeaderedTextBox));
+        public double HeaderWidth { get => (double)this.GetValue(HeaderWidthProperty); set => this.SetValue(HeaderWidthProperty, value); }
 
         static private readonly DependencyProperty HeaderProperty = DependencyProperty.Register(nameof(Header), typeof(string), typeof(HeaderedTextBox));
         public string? Header { get => this.GetValue(HeaderProperty) as string; set => this.SetValue(HeaderProperty, value); }
