@@ -1,11 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33213.308
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "General.WPF", "General.WPF.csproj", "{1919BA73-DC7B-47F9-B9E2-ADDDBA3D5221}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Genera.WPF.Test", "Test\Genera.WPF.Test.csproj", "{4D251747-6DC1-4C41-9819-CD4F084399EC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Genera.WPF.Test", "Test\Genera.WPF.Test.csproj", "{4D251747-6DC1-4C41-9819-CD4F084399EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
