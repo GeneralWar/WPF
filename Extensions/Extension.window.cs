@@ -1,5 +1,6 @@
 ﻿using General.WPF;
 using System;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Interop;
 
@@ -26,16 +27,23 @@ static public partial class WPFExtension
 
     static public void ShowWindow<WindowType>(this Window instance, Func<WindowType> creator) where WindowType : Window
     {
-        WindowType window = WindowPool.GetOrRegister(creator);
-        window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        window.Owner = instance;
-        window.Show();
-
-        if (WindowState.Minimized == window.WindowState)
+        try
         {
-            window.WindowState = WindowState.Normal;
+            WindowType window = WindowPool.GetOrRegister(creator);
+            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            window.Owner = instance;
+            window.Show();
+
+            if (WindowState.Minimized == window.WindowState)
+            {
+                window.WindowState = WindowState.Normal;
+            }
+            window.Activate();
         }
-        window.Activate();
+        catch (Exception e)
+        {
+            instance.ShowErrorMessageBox(e);
+        }
     }
 
     static public WindowType ShowDialogWindow<WindowType>(this Window instance, Func<WindowType> creator, Action<WindowType>? onClose = null) where WindowType : Window
