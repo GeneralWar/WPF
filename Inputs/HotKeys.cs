@@ -18,9 +18,12 @@ namespace General.WPF
         {
             List<Action>? actions;
             ulong realKey = MakeKey(key, modifiers);
-            if (!sKeyMap.TryGetValue(realKey, out actions))
+            lock (sKeyMap)
             {
-                sKeyMap.Add(realKey, actions = new List<Action>());
+                if (!sKeyMap.TryGetValue(realKey, out actions))
+                {
+                    sKeyMap.Add(realKey, actions = new List<Action>());
+                }
             }
 
             if (actions.Contains(action))
@@ -35,9 +38,12 @@ namespace General.WPF
         {
             List<Action>? actions;
             ulong realKey = MakeKey(key, modifiers);
-            if (!sKeyMap.TryGetValue(realKey, out actions))
+            lock (sKeyMap)
             {
-                return;
+                if (!sKeyMap.TryGetValue(realKey, out actions))
+                {
+                    return;
+                }
             }
 
             int index = actions.FindIndex(a => a.Target == action.Target && a.Method == action.Method);
@@ -61,9 +67,12 @@ namespace General.WPF
         static private void update(ulong key)
         {
             List<Action>? actions;
-            if (!sKeyMap.TryGetValue(key, out actions))
+            lock (sKeyMap)
             {
-                return;
+                if (!sKeyMap.TryGetValue(key, out actions))
+                {
+                    return;
+                }
             }
 
             foreach (Action action in actions.ToArray())

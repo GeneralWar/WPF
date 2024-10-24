@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using static Extensions;
 
 static public partial class WPFExtension
 {
@@ -258,7 +259,7 @@ static public partial class WPFExtension
         return instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), message, "询问", button, MessageBoxImage.Question));
     }
 
-    static public void ExecuteSafely(this FrameworkElement instance, Action action, Action<Exception>? onException = null)
+    static public void ExecuteSafely(this FrameworkElement instance, Action action, ExecuteArguments? arguments = null)
     {
         try
         {
@@ -267,11 +268,15 @@ static public partial class WPFExtension
         catch (Exception e)
         {
             instance.ShowErrorMessageBox(e);
-            onException?.Invoke(e);
+            arguments?.onException?.Invoke(e);
+        }
+        finally
+        {
+            arguments?.onFinally?.Invoke();
         }
     }
 
-    static public async void ExecuteSafely(this FrameworkElement instance, Func<Task> action, Action<Exception>? onException = null)
+    static public async void ExecuteSafely(this FrameworkElement instance, Func<Task> action, ExecuteArguments? arguments = null)
     {
         try
         {
@@ -280,7 +285,11 @@ static public partial class WPFExtension
         catch (Exception e)
         {
             instance.ShowErrorMessageBox(e);
-            onException?.Invoke(e);
+            arguments?.onException?.Invoke(e);
+        }
+        finally
+        {
+            arguments?.onFinally?.Invoke();
         }
     }
 
