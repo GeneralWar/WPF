@@ -251,4 +251,73 @@ namespace General.WPF
             throw new NotImplementedException();
         }
     }
+
+    public class IntegerToVisibilityCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is not int)
+            {
+                return Visibility.Collapsed;
+            }
+
+            if (parameter is int)
+            {
+                return (int)value == (int)parameter ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            return 0 == (int)value ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class InverseIntegerToVisibilityHiddenConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is not int)
+            {
+                return Visibility.Hidden;
+            }
+
+            if (parameter is int)
+            {
+                return (int)value != (int)parameter ? Visibility.Visible : Visibility.Hidden;
+            }
+
+            return 0 != (int)value ? Visibility.Hidden : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class InverseIntegerToVisibilityCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is not int)
+            {
+                return Visibility.Collapsed;
+            }
+
+            if (parameter is int)
+            {
+                return (int)value != (int)parameter ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            return 0 != (int)value ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

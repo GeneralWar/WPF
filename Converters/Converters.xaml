@@ -6,6 +6,8 @@
     <local:InverseObjectEqualToConverter x:Key="InverseObjectEqualToConverter"/>
     <local:ObjectEqualToConverter x:Key="ObjectEqualToConverter"/>
     <local:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    <local:NullableBooleanConverter x:Key="NullableBooleanConverter"/>
+    <local:InverseNullableBooleanConverter x:Key="InverseNullableBooleanConverter"/>
     <local:IntegerToBooleanConverter x:Key="IntegerToBooleanConverter"/>
     <!--value to Visibility-->
     <local:ObjectToVisibilityCollapsedConverter x:Key="ObjectToVisibilityCollapsedConverter"/>
@@ -30,6 +32,9 @@
     <local:InverseStringToVisibilityHiddenConverter x:Key="InverseStringToVisibilityHiddenConverter"/>
     <!--integer to Visibility-->
     <local:IntegerToVisibilityHiddenConverter x:Key="IntegerToVisibilityHiddenConverter"/>
+    <local:IntegerToVisibilityCollapsedConverter x:Key="IntegerToVisibilityCollapsedConverter"/>
+    <local:InverseIntegerToVisibilityHiddenConverter x:Key="InverseIntegerToVisibilityHiddenConverter"/>
+    <local:InverseIntegerToVisibilityCollapsedConverter x:Key="InverseIntegerToVisibilityCollapsedConverter"/>
     <!--number to Thickness-->
     <local:NumberToLeftThicknessConverter x:Key="NumberToLeftThicknessConverter"/>
     <local:NumberToRightThicknessConverter x:Key="NumberToRightThicknessConverter"/>
@@ -53,4 +58,6 @@
     <local:IListSelectionToEnableConverter x:Key="IListSelectionToEnableConverter"/>
     <!--unit converters-->
     <local:CentimeterToPixelConverter x:Key="CentimeterToPixelConverter"/>
+    <!--method converters-->
+    <local:MethodInvokerConveter x:Key="MethodInvokerConveter"/>
 </ResourceDictionary>
