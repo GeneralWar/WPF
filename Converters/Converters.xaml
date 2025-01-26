@@ -58,6 +58,8 @@
     <local:IListSelectionToEnableConverter x:Key="IListSelectionToEnableConverter"/>
     <!--unit converters-->
     <local:CentimeterToPixelConverter x:Key="CentimeterToPixelConverter"/>
+    <!--collection converters-->
+    <local:CollectionEmptyToVisibilityCollapsedConverter x:Key="CollectionEmptyToVisibilityCollapsedConverter"/>
     <!--method converters-->
     <local:MethodInvokerConveter x:Key="MethodInvokerConveter"/>
 </ResourceDictionary>

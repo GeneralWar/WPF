@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -244,7 +245,7 @@ static public partial class WPFExtension
 
     static public void ShowErrorMessageBox(this FrameworkElement instance, Exception e, [CallerFilePath] string? filename = null, [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string? memberName = null)
     {
-        Tracer.Error(e, filename, lineNumber, memberName);
+        Tracer.Exception(e, Assembly.GetCallingAssembly(), filename, lineNumber, memberName);
         instance.Dispatcher.Invoke(() => MessageBox.Show(instance.GetTopWindow(), e.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error));
 
         if (e.InnerException is not null)
@@ -280,7 +281,7 @@ static public partial class WPFExtension
     {
         try
         {
-            await action.Invoke();
+            await Task.Run(action);
         }
         catch (Exception e)
         {

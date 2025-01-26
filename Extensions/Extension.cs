@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -150,5 +149,11 @@ static public partial class WPFExtension
         {
             sources[i].Merge(targets.ElementAt(i));
         }
+    }
+
+    static public System.Windows.Media.Color ToMediaColor(this System.Drawing.Color value)
+    {
+        byte[] buffer = BitConverter.GetBytes(value.ToArgb());
+        return System.Windows.Media.Color.FromArgb(buffer[3], buffer[2], buffer[1], buffer[0]);
     }
 }

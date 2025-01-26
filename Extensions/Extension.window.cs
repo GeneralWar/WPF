@@ -1,7 +1,7 @@
 ﻿using General.WPF;
 using System;
-using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 
 static public partial class WPFExtension
@@ -30,6 +30,7 @@ static public partial class WPFExtension
         try
         {
             WindowType window = WindowPool.GetOrRegister(creator);
+            HotKeys.RegisterCloseWindow(window, Key.Escape);
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             window.Owner = instance;
             window.Show();
@@ -48,17 +49,21 @@ static public partial class WPFExtension
 
     static public WindowType ShowDialogWindow<WindowType>(this Window instance, Func<WindowType> creator, Action<WindowType>? onClose = null) where WindowType : Window
     {
-        WindowType window = WindowPool.GetOrRegister(creator);
-        window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        window.Owner = instance;
-        if (onClose is not null)
+        return instance.Dispatcher.Invoke(() =>
         {
-            window.Closed += delegate
+            WindowType window = WindowPool.GetOrRegister(creator);
+            HotKeys.RegisterCloseWindow(window, Key.Escape);
+            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            window.Owner = instance;
+            if (onClose is not null)
             {
-                onClose.Invoke(window);
-            };
-        }
-        window.ShowDialog();
-        return window;
+                window.Closed += delegate
+                {
+                    onClose.Invoke(window);
+                };
+            }
+            window.ShowDialog();
+            return window;
+        });
     }
 }

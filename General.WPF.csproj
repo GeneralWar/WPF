@@ -34,6 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\General.CSharp\General.Natives\General.Native.csproj" />
     <ProjectReference Include="..\General.CSharp\General\General.csproj" />
   </ItemGroup>
 

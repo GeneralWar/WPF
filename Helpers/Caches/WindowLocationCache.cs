@@ -1,9 +1,12 @@
 ﻿using General.Jsons;
+using General.Natives;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Interop;
 
 namespace General.WPF
 {
@@ -12,6 +15,16 @@ namespace General.WPF
     /// </summary>
     public class WindowLocationCache : HelperCache
     {
+        static public string GetCacheDirectoryPath(Window window, string? relativePath)
+        {
+            string path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), window.GetType().Name);
+            if (!string.IsNullOrWhiteSpace(relativePath))
+            {
+                path = Path.Join(path, relativePath);
+            }
+            return path;
+        }
+
         private string? mRelativePath = null;
         public override string CachePath => string.IsNullOrWhiteSpace(mRelativePath) ? Path.Join(base.CachePath, this.Window.GetType().Name + ".json") : Path.Join(base.CachePath, mRelativePath, this.Window.GetType().Name + ".json");
 
@@ -21,6 +34,7 @@ namespace General.WPF
         [DataField] public int LocationY { get; private set; }
         [DataField] public int Width { get; private set; }
         [DataField] public int Height { get; private set; }
+        [DataField] public Guid DesktopID { get; private set; }
 
         private WindowLocationCache(Window window) : this(window, null) { }
 
@@ -52,6 +66,8 @@ namespace General.WPF
 
         private void onInitialized(object? sender, EventArgs e)
         {
+            this.Window.Initialized -= this.onInitialized;
+
             int totalWidth = 0, totalHeight = 0;
             Screen[] screens = Screen.AllScreens;
             foreach (Screen screen in screens)
@@ -82,14 +98,25 @@ namespace General.WPF
         {
             this.Window.Activated -= this.onShow;
             this.onInitialized(sender, e);
+
+            if (!Debugger.IsAttached && Guid.Empty != this.DesktopID)
+            {
+                WindowInteropHelper helper = new WindowInteropHelper(this.Window);
+                if (0 != helper.Handle)
+                {
+                    WinAPI.MoveWindowToDesktop(helper.Handle, this.DesktopID);
+                }
+            }
         }
 
         private void onClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
+            WindowInteropHelper helper = new WindowInteropHelper(this.Window);
             this.LocationX = (int)this.Window.Left;
             this.LocationY = (int)this.Window.Top;
             this.Width = (int)this.Window.ActualWidth;
             this.Height = (int)this.Window.ActualHeight;
+            this.DesktopID = WinAPI.GetWindowDesktopId(helper.Handle);
             this.writeToCache(Encoding.UTF8.GetBytes(Json.ToJson(this)));
         }
 
@@ -105,7 +132,7 @@ namespace General.WPF
         /// Will load cache (if exists) and save cache to the relativePath under the predetermined path.
         /// </summary>
         /// <param name="relativePath">relativePath under the predetermined path, the final path will be "{PATH}/{relativePath}/..."</param>
-        static public void Register(Window window, string relativePath)
+        static public void Register(Window window, string? relativePath)
         {
             new WindowLocationCache(window, relativePath);
         }
