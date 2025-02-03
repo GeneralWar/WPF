@@ -30,6 +30,7 @@ namespace General.WPF
 
         [NonDataField] public Window Window { get; private set; }
 
+        [DataField] public WindowState WindowState { get; private set; }
         [DataField] public int LocationX { get; private set; }
         [DataField] public int LocationY { get; private set; }
         [DataField] public int Width { get; private set; }
@@ -84,13 +85,16 @@ namespace General.WPF
             {
                 this.Window.Top = this.LocationY;
             }
-            if (this.Width > 0)
+            if (WindowState.Maximized != this.WindowState)
             {
-                this.Window.Width = this.Width;
-            }
-            if (this.Height > 0)
-            {
-                this.Window.Height = this.Height;
+                if (this.Width > 0)
+                {
+                    this.Window.Width = this.Width;
+                }
+                if (this.Height > 0)
+                {
+                    this.Window.Height = this.Height;
+                }
             }
         }
 
@@ -107,15 +111,21 @@ namespace General.WPF
                     WinAPI.MoveWindowToDesktop(helper.Handle, this.DesktopID);
                 }
             }
+
+            this.Window.WindowState = this.WindowState;
         }
 
         private void onClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             WindowInteropHelper helper = new WindowInteropHelper(this.Window);
+            this.WindowState = this.Window.WindowState;
             this.LocationX = (int)this.Window.Left;
             this.LocationY = (int)this.Window.Top;
-            this.Width = (int)this.Window.ActualWidth;
-            this.Height = (int)this.Window.ActualHeight;
+            if (WindowState.Maximized != this.WindowState)
+            {
+                this.Width = (int)this.Window.ActualWidth;
+                this.Height = (int)this.Window.ActualHeight;
+            }
             this.DesktopID = WinAPI.GetWindowDesktopId(helper.Handle);
             this.writeToCache(Encoding.UTF8.GetBytes(Json.ToJson(this)));
         }
