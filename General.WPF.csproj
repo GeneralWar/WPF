@@ -45,6 +45,9 @@
     <Compile Update="Visuals\Controls\Inputs\PercentInputBox.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Visuals\Views\Panels\MessagePanel.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Visuals\Views\Renders\RenderView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
